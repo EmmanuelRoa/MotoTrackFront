@@ -5,7 +5,8 @@ import MainButton from '../../../CommonComponts/MainButton';
 import SecondaryButton from '../../../CommonComponts/SecondaryButton';
 import { useNotification } from '../../../CommonComponts/ToastNotifications';
 import styled from 'styled-components';
-import { Typography, Form, Spin, Radio, notification } from 'antd';
+import { Typography, Form, Spin, Upload, message } from 'antd';
+import { LoadingOutlined, PlusOutlined } from '@ant-design/icons';
 import { useTheme } from '../../../../../context/ThemeContext';
 import { useAuth } from '../../../../../context/AuthContext';
 import { useLanguage } from '../../../../../context/LanguageContext';
@@ -88,10 +89,40 @@ const SpinContainer = styled.div`
   height: 100%;
 `;
 
-const TestContainer = styled.div`
-  margin-top: 20px;
-  padding: 10px;
-  border-top: 1px dashed ${({ theme }) => theme.token.subtitleBlack};
+const ProfileImageContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
+  
+  .ant-upload-wrapper.ant-upload-picture-circle-wrapper .ant-upload.ant-upload-select {
+    margin: 0;
+    width: 100px !important;
+    height: 100px !important;
+    border: 2px solid ${({ theme }) => theme.token.colorPrimary};
+  }
+  
+  .avatar-text {
+    margin-top: 10px;
+    font-size: 14px;
+    color: ${({ theme }) => theme.token.subtitleBlack};
+  }
+`;
+
+const AvatarInitials = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 32px;
+  font-weight: 500;
+  color: ${({ theme }) => theme.token.titleColor};
+  background-color: ${({ theme }) => 
+    theme.currentTheme === 'themeDark' 
+      ? 'rgba(255, 255, 255, 0.1)' 
+      : 'rgba(0, 0, 0, 0.03)'
+  };
 `;
 
 const EditarMiPerfil = ({ show, onClose }) => {
@@ -102,9 +133,8 @@ const EditarMiPerfil = ({ show, onClose }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const notification = useNotification();
   const translations = profileEditTranslations[language];
-  
-  // Test state for notification type
-  const [testResult, setTestResult] = useState('success');
+  const [imageUrl, setImageUrl] = useState('');
+  const [loading, setLoading] = useState(false);
   
   // Reset and populate form when modal opens
   useEffect(() => {
@@ -114,26 +144,79 @@ const EditarMiPerfil = ({ show, onClose }) => {
         lastName: currentUser?.lastName || '',
         email: currentUser?.email || ''
       });
+      
+      // Set profile image if exists
+      if (currentUser?.profileImage) {
+        setImageUrl(currentUser.profileImage);
+      } else {
+        setImageUrl('');
+      }
     }
   }, [show, form, currentUser]);
+  
+  // Convert file to base64 for preview
+  const getBase64 = (file, callback) => {
+    const reader = new FileReader();
+    reader.addEventListener('load', () => callback(reader.result));
+    reader.readAsDataURL(file);
+  };
+  
+  // Validate file before upload
+  const beforeUpload = (file) => {
+    const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
+    if (!isJpgOrPng) {
+      message.error(translations.photoUpload?.typeError || 'Solo puedes subir imágenes JPG o PNG');
+      return false;
+    }
+    const isLt2M = file.size / 1024 / 1024 < 2;
+    if (!isLt2M) {
+      message.error(translations.photoUpload?.sizeError || 'La imagen debe ser menor a 2MB');
+      return false;
+    }
+    return true;
+  };
+  
+  // Handle image change
+  const handleImageChange = (info) => {
+    if (info.file.status === 'uploading') {
+      setLoading(true);
+      return;
+    }
+    
+    if (info.file.status === 'done') {
+      // In a real app, you would use the response URL
+      // Here we're using FileReader for demo purposes
+      getBase64(info.file.originFileObj, (url) => {
+        setLoading(false);
+        setImageUrl(url);
+        // Add profile image to form values
+        form.setFieldsValue({
+          ...form.getFieldsValue(),
+          profileImage: url
+        });
+      });
+    } else if (info.file.status === 'error') {
+      setLoading(false);
+      message.error(translations.photoUpload?.uploadError || 'Error al subir la imagen');
+    }
+  };
   
   const handleFinish = async (values) => {
     setIsSubmitting(true);
     
+    // Include the image URL in the form submission
+    const updatedValues = {
+      ...values,
+      profileImage: imageUrl
+    };
+    
     // Simulate API call with a delay
     setTimeout(() => {
-      if (testResult === 'success') {
-        notification.success(
-          translations.success.title,
-          translations.success.description
-        );
-        onClose();
-      } else {
-        notification.error(
-          translations.error.title,
-          translations.error.description
-        );
-      }
+      notification.success(
+        translations.success.title,
+        translations.success.description
+      );
+      onClose();
       setIsSubmitting(false);
     }, 1000);
   };
@@ -144,7 +227,8 @@ const EditarMiPerfil = ({ show, onClose }) => {
     const isModified = 
       formValues.firstName !== (currentUser?.firstName || '') ||
       formValues.lastName !== (currentUser?.lastName || '') ||
-      formValues.email !== (currentUser?.email || '');
+      formValues.email !== (currentUser?.email || '') ||
+      imageUrl !== (currentUser?.profileImage || '');
       
     if (isModified) {
       if (window.confirm(translations.confirmCancel)) {
@@ -155,34 +239,17 @@ const EditarMiPerfil = ({ show, onClose }) => {
     }
   };
   
-  // Test functions to quickly show all notification types
-  const showTestNotifications = (type) => {
-    switch(type) {
-      case 'success':
-        // Try both your custom hook and direct API to see which works
-        notification.success({
-          message: 'Direct Success Title',
-          description: 'Using direct notification API',
-          placement: 'topRight',
-        });
-        notification.success({
-          message: 'Success Title', 
-          description: 'This is a success notification with theme support.'
-        });
-        break;
-      case 'error':
-        notification.error('Error Title', 'This is an error notification with theme support.');
-        break;
-      case 'warning':
-        notification.warning('Warning Title', 'This is a warning notification with theme support.');
-        break;
-      case 'info':
-        notification.info('Info Title', 'This is an info notification with theme support.');
-        break;
-      default:
-        break;
-    }
-  };
+  // Upload button content
+  const uploadButton = (
+    <>
+      {loading ? <LoadingOutlined /> : 
+        <AvatarInitials theme={theme}>
+          {currentUser?.firstName?.charAt(0) || ''}
+          {currentUser?.lastName?.charAt(0) || ''}
+        </AvatarInitials>
+      }
+    </>
+  );
   
   return (
     <Modal 
@@ -208,9 +275,46 @@ const EditarMiPerfil = ({ show, onClose }) => {
             initialValues={{
               firstName: currentUser?.firstName || '',
               lastName: currentUser?.lastName || '',
-              email: currentUser?.email || ''
+              email: currentUser?.email || '',
+              profileImage: currentUser?.profileImage || ''
             }}
           >
+            {/* Profile Image Upload */}
+            <ProfileImageContainer theme={theme}>
+              <Form.Item
+                name="profileImage"
+                valuePropName="file"
+                style={{ marginBottom: 0 }}
+              >
+                <Upload
+                  name="avatar"
+                  listType="picture-circle"
+                  className="avatar-uploader"
+                  showUploadList={false}
+                  action="https://run.mocky.io/v3/435e224c-44fb-4773-9faf-380c5e6a2188"
+                  beforeUpload={beforeUpload}
+                  onChange={handleImageChange}
+                  accept=".jpg,.jpeg,.png"
+                >
+                  {imageUrl ? (
+                    <img 
+                      src={imageUrl} 
+                      alt="avatar" 
+                      style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        objectFit: 'cover',
+                        borderRadius: '50%' 
+                      }} 
+                    />
+                  ) : uploadButton}
+                </Upload>
+              </Form.Item>
+              <div className="avatar-text">
+                {translations.photoUpload?.text || 'Foto de perfil'}
+              </div>
+            </ProfileImageContainer>
+            
             <FormItem
               name="firstName"
               label={translations.firstName}
@@ -274,7 +378,6 @@ const EditarMiPerfil = ({ show, onClose }) => {
             </ButtonContainer>
           </FormContainer>
         )}
-        
       </ModalContent>
     </Modal>
   );

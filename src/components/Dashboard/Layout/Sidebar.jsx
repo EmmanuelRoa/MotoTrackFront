@@ -26,6 +26,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import { getTranslation } from '../../../utils/translations';
+import LoadingOverlay from '../CommonComponts/loadingOverlay';
 
 const { Sider } = Layout;
 
@@ -528,6 +529,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
   const [selectedKeys, setSelectedKeys] = useState([]);
   const [mobileDrawerVisible, setMobileDrawerVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [pageLoading, setPageLoading] = useState(false);
 
   // Detectar cambios de tamaño de ventana
   useEffect(() => {
@@ -620,6 +622,9 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
       return;
     }
     
+    // Mostrar loading overlay antes de navegar
+    setPageLoading(true);
+    
     let path = '';
     if (currentUser?.role === 'administrador') {
       path = `/panel/admin${key === 'dashboard' ? '' : `/${key}`}`;
@@ -630,9 +635,17 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
       path = `/panel/ciudadano${key === 'dashboard' ? '' : `/${key}`}`;
     }
     
-    console.log(`Navegando a: ${path}`); // Log para depuración
+    console.log(`Navegando a: ${path}`);
     setSelectedKeys([key]);
+    
+    // Navegar y ocultar el loading overlay después de un breve retraso
+    // para simular el tiempo de carga
     navigate(path);
+    
+    // Simular tiempo de carga (puedes eliminar esto en producción)
+    setTimeout(() => {
+      setPageLoading(false);
+    }, 800); // Ajusta este tiempo según tus necesidades
     
     if (isMobile) {
       setMobileDrawerVisible(false);
@@ -732,6 +745,9 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
 
         return (
           <>
+            {/* Agrega el LoadingOverlay aquí */}
+            <LoadingOverlay isLoading={pageLoading} text="Cargando página..." />
+            
             <StyledSider
               theme={safeTheme}
               collapsed={collapsed}

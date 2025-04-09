@@ -474,9 +474,9 @@ const ProfileDropdown = ({ currentUser, logout, visible, onVisibleChange }) => {
           />
           <UserInfoContainer>
             <UserProfileName>
-              {currentUser?.firstName} {currentUser?.lastName}
+              {currentUser?.nombres} {currentUser?.apellidos}
             </UserProfileName>
-            <UserProfileEmail>{currentUser?.email}</UserProfileEmail>
+            <UserProfileEmail>{currentUser?.correo}</UserProfileEmail>
           </UserInfoContainer>
         </UserProfileHeader>
 

@@ -284,8 +284,8 @@ const Header = ({ collapsed }) => {
               size={40}
             />
             <UserDetails>
-              <UserName>{currentUser?.firstName} {currentUser?.lastName}</UserName>
-              <UserRole>{currentUser?.role === 'admin'
+              <UserName>{currentUser?.nombres} {currentUser?.apellidos}</UserName>
+              <UserRole>{currentUser?.role === 'administrador'
                 ? 'Administrador'
                 : currentUser?.role === 'empleado'
                   ? 'Empleado'

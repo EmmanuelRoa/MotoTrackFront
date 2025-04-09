@@ -62,8 +62,6 @@ const sideImageVariants = {
   },
 };
 
-
-
 const logoVariants = {
   initial: { scale: 0.7, opacity: 0, rotate: -5 },
   animate: { 
@@ -378,16 +376,16 @@ function LogIn() {
     return valid;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (validateForm()) {
-      const user = login(formData.email, formData.password);
-      if (!user) {
+      const user = await login(formData.email, formData.password);
+      if (user.success == false) {
         setErrors(prevErrors => ({
           ...prevErrors,
-          email: 'Invalid email or password',
-          password: 'Invalid email or password'
+          email: 'Email o Contraseña inválidos',
+          password: 'Email o Contraseña inválidos'
         }));
       }
     }

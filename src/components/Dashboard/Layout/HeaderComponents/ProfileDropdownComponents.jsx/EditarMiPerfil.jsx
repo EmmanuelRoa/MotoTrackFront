@@ -11,6 +11,8 @@ import { useTheme } from '../../../../../context/ThemeContext';
 import { useAuth } from '../../../../../context/AuthContext';
 import { useLanguage } from '../../../../../context/LanguageContext';
 import { profileEditTranslations } from '../../../../../utils/Modals/EditarMiPerfil';
+import axios from 'axios';
+import ReactDom from 'react-dom';
 
 const { Title } = Typography;
 
@@ -129,25 +131,26 @@ const EditarMiPerfil = ({ show, onClose }) => {
   const [form] = Form.useForm();
   const { theme } = useTheme();
   const { language } = useLanguage();
-  const { currentUser } = useAuth();
+  const { currentUser, getAccessToken, fetchUser } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const notification = useNotification();
   const translations = profileEditTranslations[language];
   const [imageUrl, setImageUrl] = useState('');
   const [loading, setLoading] = useState(false);
-  
+  const apiUrl = import.meta.env.VITE_API_URL;
+
   // Reset and populate form when modal opens
   useEffect(() => {
     if (show && currentUser) {
       form.setFieldsValue({
-        firstName: currentUser?.firstName || '',
-        lastName: currentUser?.lastName || '',
-        email: currentUser?.email || ''
+        firstName: currentUser?.nombres || '',
+        lastName: currentUser?.apellidos || '',
+        email: currentUser?.correo || ''
       });
       
       // Set profile image if exists
-      if (currentUser?.profileImage) {
-        setImageUrl(currentUser.profileImage);
+      if (currentUser?.ftPerfil) {
+        setImageUrl(currentUser.ftPerfil);
       } else {
         setImageUrl('');
       }
@@ -168,9 +171,9 @@ const EditarMiPerfil = ({ show, onClose }) => {
       message.error(translations.photoUpload?.typeError || 'Solo puedes subir imágenes JPG o PNG');
       return false;
     }
-    const isLt2M = file.size / 1024 / 1024 < 2;
-    if (!isLt2M) {
-      message.error(translations.photoUpload?.sizeError || 'La imagen debe ser menor a 2MB');
+    const isLt8M = file.size / 1024 / 1024 < 8;
+    if (!isLt8M) {
+      message.error(translations.photoUpload?.sizeError || 'La imagen debe ser menor a 8MB');
       return false;
     }
     return true;
@@ -203,32 +206,72 @@ const EditarMiPerfil = ({ show, onClose }) => {
   
   const handleFinish = async (values) => {
     setIsSubmitting(true);
-    
-    // Include the image URL in the form submission
-    const updatedValues = {
-      ...values,
-      profileImage: imageUrl
-    };
-    
-    // Simulate API call with a delay
-    setTimeout(() => {
-      notification.success(
-        translations.success.title,
-        translations.success.description
-      );
+
+    // Check which fields have been modified
+    const modifiedFields = {};
+    if (values.firstName !== (currentUser?.nombres || '')) {
+      modifiedFields.nombres = values.firstName;
+    }
+    if (values.lastName !== (currentUser?.apellidos || '')) {
+      modifiedFields.apellidos = values.lastName;
+    }
+    if (values.email !== (currentUser?.correo || '')) {
+      modifiedFields.correo = values.email;
+    }
+    if (imageUrl !== (currentUser?.ftPerfil || '')) {
+      modifiedFields.ftPerfil = imageUrl;
+    }
+
+    // If no fields were modified, close the modal
+    if (Object.keys(modifiedFields).length === 0) {
       onClose();
       setIsSubmitting(false);
-    }, 1000);
+      return;
+    }
+
+    try {
+      const response = await axios.put(
+        `${apiUrl}/api/profile`,
+        modifiedFields,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+        }
+      );
+
+      if (response?.data?.success === false) {
+        throw new Error(translations.error.description || 'Error al actualizar el perfil');
+      }
+    
+      const updatedUser = response?.data?.data;
+      
+      notification.success(
+        translations.success.title,
+        translations.success.response?.data?.message || translations.success.description
+      );
+
+      await fetchUser(); // Refresh user data
+      onClose();
+    } catch (error) {
+      notification.error(
+        translations.error.title || 'Error',
+        error.message || translations.error.description
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   const handleCancel = () => {
     // Check if form has been modified before closing
     const formValues = form.getFieldsValue();
     const isModified = 
-      formValues.firstName !== (currentUser?.firstName || '') ||
-      formValues.lastName !== (currentUser?.lastName || '') ||
-      formValues.email !== (currentUser?.email || '') ||
-      imageUrl !== (currentUser?.profileImage || '');
+      formValues.nombres !== (currentUser?.nombres || '') ||
+      formValues.apellidos !== (currentUser?.apellidos || '') ||
+      formValues.correo !== (currentUser?.correo || '') ||
+      imageUrl !== (currentUser?.ftPerfil || '');
       
     if (isModified) {
       if (window.confirm(translations.confirmCancel)) {

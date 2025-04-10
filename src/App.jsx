@@ -18,6 +18,7 @@ import CiudadanoDashboardPage from './pages/Dashboard/Ciudadano/CiudadanoDashboa
 import RegistrarPage from './pages/Dashboard/Ciudadano/RegistrarPage';
 import MotocicletasPage from './pages/Dashboard/Ciudadano/MotocicletasPage';
 import LandingPage from './pages/LandingPage/LandingPage';
+import LoadingOverlay from './components/Dashboard/CommonComponts/loadingOverlay';
 
 // Updated ProtectedRoute component that uses the auth context
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -26,11 +27,10 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
    // Add a check for loading state
    if (loading) {
     // Return a loading indicator or null while checking authentication
-    return <div>Loading...</div>; // Or some loading spinner component
+    return <LoadingOverlay isLoading={loading} text="Cargando página..."/>
   }
 
   if (!isAuthenticated) {
-    console.log(currentUser, isAuthenticated, loading);
     console.log('User is not authenticated, redirecting to login...');
     return <Navigate to="/login" replace />;
   }

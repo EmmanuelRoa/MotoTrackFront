@@ -242,7 +242,7 @@ const Header = ({ collapsed }) => {
       setPageSubtitle(getTranslation('header.subtitles.welcome', language));
     }
   }, [location, language]);
-
+  
   // Se utiliza el componente ProfileDropdown para el menú de usuario
   const userMenu = (
     <ProfileDropdown currentUser={currentUser} logout={logout} />

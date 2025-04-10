@@ -645,7 +645,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
     // Simular tiempo de carga (puedes eliminar esto en producción)
     setTimeout(() => {
       setPageLoading(false);
-    }, 800); // Ajusta este tiempo según tus necesidades
+    }, 600); // Ajusta este tiempo según tus necesidades
     
     if (isMobile) {
       setMobileDrawerVisible(false);

@@ -16,46 +16,47 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
 
+  async function fetchUser() {
+    const token = getAccessToken();
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    try {
+      setLoading(true);
+      const response = await axios.get(`${apiUrl}/api/profileToken`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (response.data.success === false) {
+        logout(); // Limpiar estado si el token no es válido
+      } else {
+        setCurrentUser(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      logout(); // Limpiar estado en caso de error
+    } finally {
+      setLoading(false);
+    }
+  }
+
   // Check for existing user session on app load
   useEffect(() => {
-    async function fetchUser() {
-      const token = getAccessToken();
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-      try {
-        setLoading(true);
-        const response = await axios.get(`${apiUrl}/api/profileToken`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        if (response.data.success === false) {
-          logout(); // Limpiar estado si el token no es válido
-        } else {
-          setCurrentUser(response.data.data);
-        }
-      } catch (error) {
-        console.error('Error fetching user:', error);
-        logout(); // Limpiar estado en caso de error
-      } finally {
-        setLoading(false);
-      }
-    }
     fetchUser();
   }, []);
 
   // Login function
   const login = async (email, password) => {
     try {
+      setLoading(true);
       const response = await axios.post(`${apiUrl}/api/login`, 
         { correo: email,
           contrasena: password 
         });
       
       const user = response.data.data.user;
-
       localStorage.setItem('accessToken', response.data.data.accessToken);
       localStorage.setItem('refreshToken', response.data.data.refreshToken);
       
@@ -64,8 +65,10 @@ export const AuthProvider = ({ children }) => {
         setCurrentUser(user);
         navigate('/panel/admin');
       } else if (user.role === 'empleado') {
+        setCurrentUser(user);
         navigate('/panel/empleado');
       } else if (user.role === 'ciudadano') {
+        setCurrentUser(user);
         navigate('/panel/ciudadano');
       }
 
@@ -74,6 +77,8 @@ export const AuthProvider = ({ children }) => {
       const er = error.response ? error.response.data : 'Error logging in';
       console.error('Login error:', error);
       return er;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -94,6 +99,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const value = {
+    fetchUser,
     currentUser,
     login,
     logout,

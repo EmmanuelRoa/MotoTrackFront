@@ -23,7 +23,6 @@ import CambiarMiContraseña from './ProfileDropdownComponents.jsx/CambiarMiContr
 import EditarMiPerfil from './ProfileDropdownComponents.jsx/EditarMiPerfil';
 
 
-
 // Add global styles to properly handle submenu on mobile
 const GlobalStyles = createGlobalStyle`
   .color-submenu-responsive {

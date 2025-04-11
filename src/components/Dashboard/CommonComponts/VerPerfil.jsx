@@ -298,6 +298,10 @@ const VerPerfil = ({ visible, onClose, currentUser, isOwnProfile = false }) => {
       { 
         label: "Cargo", 
         value: userData?.datosPersonales?.tipoPersona?.nombre|| "No especificado" 
+      },
+      { 
+        label: "Tipo de usuario", 
+        value: userData?.tipoUsuario?.nombre|| "No especificado" 
       }
     ];
     

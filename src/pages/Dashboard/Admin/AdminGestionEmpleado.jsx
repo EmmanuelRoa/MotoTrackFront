@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Row, Col } from 'antd';
+import { Row, Col, Spin } from 'antd'; // Importa Spin
 import EmpleadosMetricsCards from '../../../components/Dashboard/AdminComponents/GestionDeEmpleados/EmpleadosMetricsCards';
 import FilterBar from '../../../components/Dashboard/CommonComponts/Filterbar';
 import GestionFilter from '../../../components/Dashboard/AdminComponents/GestionDeEmpleados/GestionFilter';
@@ -7,11 +7,13 @@ import GestionTable from '../../../components/Dashboard/AdminComponents/GestionD
 import { exportTableToPdf } from '../../../components/Dashboard/CommonComponts/ExportTablePdf';
 import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
-import { empleadosData, EMPLEADO_ROL } from '../../../data/empleadosData';
 import { useNotification } from '../../../components/Dashboard/CommonComponts/ToastNotifications';
 import { usePrimaryColor } from '../../../context/PrimaryColorContext';
 import styled from 'styled-components';
 import CrearEditarEmpleado from '../../../components/Dashboard/AdminComponents/GestionDeEmpleados/Crear&EditarEmpleado';
+import axios from 'axios';
+import { useAuth } from '../../../context/AuthContext';
+import { data } from 'react-router-dom';
 
 const ResponsiveContainer = styled.div`
   padding: 0 16px;
@@ -36,11 +38,12 @@ const SectionContainer = styled.div`
 `;
 
 function AdminGestionEmpleado() {
-  const { theme, currentTheme } = useTheme();
+  const { theme } = useTheme();
   const { language } = useLanguage();
   const { primaryColor } = usePrimaryColor();
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [filteredData, setFilteredData] = useState([]);
+  const [originalData, setOriginalData] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilters, setActiveFilters] = useState({
     cedula: '',
@@ -49,83 +52,123 @@ function AdminGestionEmpleado() {
   });
   const [showCreateEditModal, setShowCreateEditModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const { getAccessToken } = useAuth();
+  const [loading, setLoading] = useState(true); // Estado para el spinner
 
   const notification = useNotification();
   const tableColumnsRef = useRef([]);
   
+  const fetchDataEmployee = async () => {
+    try {
+      setLoading(true); // Mostrar spinner
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/adminEmployees`, {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        }
+      });
+      if (response?.success === false) {
+        notification.error(
+          language === 'es' ? 'Error' : 'Error',
+          language === 'es' ? 'Error al cargar los empleados' : 'Error loading employees'
+        );
+        return;
+      }
+      setFilteredData(response?.data);
+      setOriginalData(response?.data); // Guardar datos originales
+    } catch (error) {
+      console.error('Error fetching employee data:', error);
+      notification.error(
+        language === 'es' ? 'Error' : 'Error',
+        language === 'es' ? 'Error al cargar los empleados' : 'Error loading employees'
+      );
+    } finally {
+      setLoading(false); // Ocultar spinner
+    }
+  };
+
   // Initialize with employee data
   useEffect(() => {
-    setFilteredData(empleadosData);
+    fetchDataEmployee();
   }, []);
-  
+
   // Extract unique roles and statuses for filters
-  const roles = [
-    { id: 'ADMIN', name: language === 'es' ? 'Administrador' : 'Administrator' },
-    { id: 'EMPLEADO', name: language === 'es' ? 'Empleado' : 'Employee' }
+  const cargos = [
+    { id: 'Administrador', name: language === 'es' ? 'Administrador' : 'Administrator' },
+    { id: 'Empleado', name: language === 'es' ? 'Empleado' : 'Employee' },
+    { id: 'Agente de Registro y Verificación Vehicular', name: language === 'es' ? 'Agente de Registro y Verificación Vehicular' : 'Vehicle Registration and Verification Agent' },
+    { id: 'Analista de Monitoreo y Control', name: language === 'es' ? 'Analista de Monitoreo y Control' : 'Monitoring and Control Analyst' },
+    { id: 'Supervisor', name: language === 'es' ? 'Supervisor' : 'Supervisor' }
   ];
   
   const statuses = [
-    { id: 'ACTIVO', name: language === 'es' ? 'Activo' : 'Active' },
-    { id: 'INACTIVO', name: language === 'es' ? 'Inactivo' : 'Inactive' }
+    { id: 'activo', name: language === 'es' ? 'Activo' : 'Active' },
+    { id: 'deshabilitado', name: language === 'es' ? 'Deshabilitado' : 'Disabled' }
   ];
   
   const toggleFilters = () => {
     setFiltersVisible(!filtersVisible);
   };
-  
-  // Search function
+
   const handleSearch = (field, value) => {
     setSearchTerm(value);
-    
-    // If search is cleared, just apply existing filters without search term
-    if (!value || value.trim() === '') {
-      applyFiltersAndSearch('', activeFilters);
-    } else {
-      // Apply search with active filters
-      applyFiltersAndSearch(value, activeFilters);
-    }
+    applyFiltersAndSearch(value, activeFilters); // Aplica los filtros con cada cambio en el campo de búsqueda
   };
-  
-  // Filter function
+
   const handleApplyFilters = (filters) => {
     setActiveFilters(filters);
     applyFiltersAndSearch(searchTerm, filters);
     setFiltersVisible(false);
   };
-  
-  // Combined filter and search function
+
   const applyFiltersAndSearch = (search, filters) => {
-    // Start with original data
-    let result = [...empleadosData];
-    
-    // Apply search if there's a search term
-    if (search && search.trim() !== '') {
-      const lowercaseSearch = search.toLowerCase();
-      result = result.filter(employee =>
-        String(employee.id).includes(lowercaseSearch) ||
-        `${employee.nombres} ${employee.apellidos}`.toLowerCase().includes(lowercaseSearch) ||
-        employee.cedula.toLowerCase().includes(lowercaseSearch) ||
-        employee.telefono.toLowerCase().includes(lowercaseSearch)
-      );
-    }
-    
-    // Apply filters
+    let result = originalData; // Start with the original data
+
     if (filters.cedula && filters.cedula.trim() !== '') {
-      const lowercaseCedula = filters.cedula.toLowerCase();
-      result = result.filter(employee =>
-        employee.cedula.toLowerCase().includes(lowercaseCedula)
+      const lowercaseCedula = filters.cedula;
+      result = result.data.filter(employee =>
+        employee.cedula && employee.cedula.includes(lowercaseCedula)
       );
     }
-    
-    if (filters.role && filters.role !== 'all') {
-      result = result.filter(employee => employee.role === filters.role);
+
+    if (filters.cargo && filters.cargo !== 'all') {
+      result = result.data.filter(employee => employee?.datosPersonales?.tipoPersona?.nombre === filters.cargo);
     }
-    
+
     if (filters.status && filters.status !== 'all') {
-      result = result.filter(employee => employee.estado === filters.status);
+      result = result.data.filter(employee => employee.estado === filters.status);
     }
-    
-    setFilteredData(result);
+
+    if (search && search.trim() !== '') {
+      console.log('search: ', search);
+      const lowercaseSearch = search.toLowerCase();
+      if(result.data) {
+        result = result.data.filter(employee =>
+          `${employee.nombres} ${employee.apellidos}`.toLowerCase().includes(lowercaseSearch) ||
+          (employee.cedula && employee.cedula.toLowerCase().includes(lowercaseSearch))
+        );
+      }
+      else {
+        result = result.filter(employee =>
+          `${employee.nombres} ${employee.apellidos}`.toLowerCase().includes(lowercaseSearch) ||
+          (employee.cedula && employee.cedula.toLowerCase().includes(lowercaseSearch))
+        );
+      }
+    } else {
+      console.log('search: ', search);
+      console.log('filters: ', filters);
+      if ((search && search.trim() === '' && filters.cedula && filters.cedula.trim() === '' && filters.cargo && filters.cargo === 'all' && filters.status && filters.status === 'all')) {
+        result = originalData.data; // Reset to original data if search is empty
+      }
+    }
+
+    if (result.length < 1) {
+      notification.info(
+        language === 'es' ? 'No se encontraron resultados' : 'No results found',
+        language === 'es' ? 'Intenta con otros filtros' : 'Try other filters'
+      );
+    }
+
+    setFilteredData({...filteredData, data: result}); // Update filteredData directly with the filtered result
   };
 
   // Handler functions for the table actions
@@ -141,10 +184,34 @@ function AdminGestionEmpleado() {
     setShowCreateEditModal(true);
   };
 
-  const handleDelete = (record) => {
-    // Remove employee from filteredData
-    const updatedData = filteredData.filter(item => item.id !== record.id);
-    setFilteredData(updatedData);
+  const handleDelete = async (record) => {
+    try {
+      const response = await axios.delete(`${import.meta.env.VITE_API_URL}/api/user`, {
+        data: { idUsuario: record.id },
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+      });
+
+      if (response?.data?.success) {
+        notification.success(
+          language === 'es' ? 'Empleado eliminado' : 'Employee deleted',
+          language === 'es' ? 'El empleado ha sido eliminado exitosamente' : 'The employee has been successfully deleted'
+        );
+        await fetchDataEmployee(); 
+      } else {
+      notification.error(
+        language === 'es' ? 'Error' : 'Error',
+        language === 'es' ? 'No se pudo eliminar el empleado' : 'Failed to delete the employee'
+      );
+      }
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+      notification.error(
+      language === 'es' ? 'Error' : 'Error',
+      language === 'es' ? 'Ocurrió un error al eliminar el empleado' : 'An error occurred while deleting the employee'
+      );
+    }
   };
 
   const handleActivate = (record) => {
@@ -198,56 +265,57 @@ function AdminGestionEmpleado() {
   };
 
   return (
-    <ResponsiveContainer>
-      <Row gutter={[16, 24]} className="dashboard-row">
-        <Col xs={24} sm={24} md={24} lg={24} xl={24}>
-          <SectionContainer>
-            <EmpleadosMetricsCards />
-          </SectionContainer>
-        </Col>
-      </Row>
-      
-      <Row gutter={[16, 24]} className="dashboard-row">
-        <Col xs={24} sm={24} md={24} lg={24} xl={24}>
-          <SectionContainer>
-            {/* Use the enhanced FilterBar with Add Employee button */}
-            <FilterBar 
-              onFilterClick={toggleFilters}
-              onSearch={handleSearch}
-              onExportPDF={handleExportPDF}
-              showAddButton={true} // Only show Add button on employee management page
-              onAddClick={handleAddEmployee}
-              searchPlaceholder={language === 'es' ? 'Buscar empleado...' : 'Search employee...'}
-            />
-            
-            <GestionFilter 
-              isVisible={filtersVisible}
-              onClose={() => setFiltersVisible(false)}
-              onApplyFilters={handleApplyFilters}
-              roles={roles}
-              statuses={statuses}
-            />
-            
-            <GestionTable 
-              empleadosData={filteredData}
-              onView={handleView}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onActivate={handleActivate}
-              onDeactivate={handleDeactivate}
-              onTableReady={handleTableReady}
-            />
-          </SectionContainer>
-        </Col>
-      </Row>
+    <Spin spinning={loading} tip="Cargando empleados..."> {/* Spinner envuelve todo el contenido */}
+      <ResponsiveContainer>
+        <Row gutter={[16, 24]} className="dashboard-row">
+          <Col xs={24} sm={24} md={24} lg={24} xl={24}>
+            <SectionContainer>
+              <EmpleadosMetricsCards />
+            </SectionContainer>
+          </Col>
+        </Row>
+        
+        <Row gutter={[16, 24]} className="dashboard-row">
+          <Col xs={24} sm={24} md={24} lg={24} xl={24}>
+            <SectionContainer>
+              <FilterBar 
+                onFilterClick={toggleFilters}
+                onSearch={handleSearch}
+                onExportPDF={handleExportPDF}
+                showAddButton={true}
+                onAddClick={handleAddEmployee}
+                searchPlaceholder={language === 'es' ? 'Buscar empleado...' : 'Search employee...'}
+              />
+              
+              <GestionFilter 
+                isVisible={filtersVisible}
+                onClose={() => setFiltersVisible(false)}
+                onApplyFilters={handleApplyFilters}
+                cargos={cargos}
+                statuses={statuses}
+              />
+              
+              <GestionTable 
+                empleadosData={filteredData}
+                onView={handleView}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onActivate={handleActivate}
+                onDeactivate={handleDeactivate}
+                onTableReady={handleTableReady}
+              />
+            </SectionContainer>
+          </Col>
+        </Row>
 
-      <CrearEditarEmpleado
-        visible={showCreateEditModal}
-        onClose={handleCloseModal}
-        empleadoData={selectedEmployee}
-        isEditing={!!selectedEmployee}
-      />
-    </ResponsiveContainer>
+        <CrearEditarEmpleado
+          visible={showCreateEditModal}
+          onClose={handleCloseModal}
+          empleadoData={selectedEmployee}
+          isEditing={!!selectedEmployee}
+        />
+      </ResponsiveContainer>
+    </Spin>
   );
 }
 

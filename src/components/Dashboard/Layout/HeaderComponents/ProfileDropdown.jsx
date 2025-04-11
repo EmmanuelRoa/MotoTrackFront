@@ -460,15 +460,15 @@ const ProfileDropdown = ({ currentUser, logout, visible, onVisibleChange }) => {
       </ResponsiveMenu>
     );
   }
-
+  
   return (
     <>
       <ResponsiveMenu theme={isDarkMode ? 'dark' : 'light'}>
         <GlobalStyles />
         <UserProfileHeader onClick={showProfileModal}>
           <UserProfileAvatar
-            src={currentUser?.profileImage}
-            icon={!currentUser?.profileImage && <UserOutlined />}
+            src={currentUser?.ftPerfil}
+            icon={!currentUser?.ftPerfil && <UserOutlined />}
             size={48}
           />
           <UserInfoContainer>

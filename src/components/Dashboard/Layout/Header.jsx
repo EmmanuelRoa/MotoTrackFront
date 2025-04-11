@@ -279,8 +279,8 @@ const Header = ({ collapsed }) => {
         >
           <UserInfo>
             <UserAvatar 
-              src={currentUser?.profileImage} 
-              icon={!currentUser?.profileImage && <UserOutlined />}
+              src={currentUser?.ftPerfil} 
+              icon={!currentUser?.ftPerfil && <UserOutlined />}
               size={40}
             />
             <UserDetails>

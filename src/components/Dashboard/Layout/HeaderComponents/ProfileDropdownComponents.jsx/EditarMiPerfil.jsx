@@ -166,41 +166,72 @@ const EditarMiPerfil = ({ show, onClose }) => {
   
   // Validate file before upload
   const beforeUpload = (file) => {
-    const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
-    if (!isJpgOrPng) {
-      message.error(translations.photoUpload?.typeError || 'Solo puedes subir imágenes JPG o PNG');
+    const isValidType = 
+      file.type === 'image/jpeg' || 
+      file.type === 'image/png' || 
+      file.type === 'application/pdf'; // Permitir PDF
+  
+    if (!isValidType) {
+      message.error(
+        translations.photoUpload?.typeError || 
+        'Solo puedes subir imágenes JPG, PNG o archivos PDF'
+      );
       return false;
     }
-    const isLt8M = file.size / 1024 / 1024 < 8;
+  
+    const isLt8M = file.size / 1024 / 1024 < 8; // Tamaño máximo de 8MB
     if (!isLt8M) {
-      message.error(translations.photoUpload?.sizeError || 'La imagen debe ser menor a 8MB');
+      message.error(
+        translations.photoUpload?.sizeError || 
+        'El archivo debe ser menor a 8MB'
+      );
       return false;
     }
+  
     return true;
   };
   
   // Handle image change
   const handleImageChange = (info) => {
-    if (info.file.status === 'uploading') {
-      setLoading(true);
-      return;
-    }
-    
+    console.log(info);
+
+    // Verifica si el estado del archivo es "done"
     if (info.file.status === 'done') {
-      // In a real app, you would use the response URL
-      // Here we're using FileReader for demo purposes
-      getBase64(info.file.originFileObj, (url) => {
-        setLoading(false);
-        setImageUrl(url);
-        // Add profile image to form values
-        form.setFieldsValue({
-          ...form.getFieldsValue(),
-          profileImage: url
+      setLoading(true);
+      const formData = new FormData();
+      formData.append('file', info.file.originFileObj);
+      formData.append('fileType', 'perfil');
+
+      axios.post(`${apiUrl}/api/profilePicture`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+      })
+        .then((response) => {
+          if (response?.data?.success) {
+            const url = response.data.data.url; // Extract the URL from the response
+            setImageUrl(url);
+            notification.success(
+              translations.photoUpload?.successTitle || 'Éxito',
+              translations.photoUpload?.successMessage || 'Imagen subida correctamente'
+            );
+          } else {
+            notification.error(
+              translations.photoUpload?.errorTitle || 'Error',
+              translations.photoUpload?.errorMessage || 'Error al subir la imagen'
+            );
+          }
+        })
+        .catch((error) => {
+          notification.error(
+            translations.photoUpload?.errorTitle || 'Error',
+            error.message || translations.photoUpload?.errorMessage || 'No se pudo subir la imagen'
+          );
+        })
+        .finally(() => {
+          setLoading(false);
         });
-      });
-    } else if (info.file.status === 'error') {
-      setLoading(false);
-      message.error(translations.photoUpload?.uploadError || 'Error al subir la imagen');
     }
   };
   
@@ -334,12 +365,54 @@ const EditarMiPerfil = ({ show, onClose }) => {
                   listType="picture-circle"
                   className="avatar-uploader"
                   showUploadList={false}
-                  action="https://run.mocky.io/v3/435e224c-44fb-4773-9faf-380c5e6a2188"
                   beforeUpload={beforeUpload}
-                  onChange={handleImageChange}
-                  accept=".jpg,.jpeg,.png"
+                  customRequest={async (options) => {
+                    const { file, onSuccess, onError } = options;
+                
+                    try {
+                      setLoading(true); // Activar el spinner
+                      const formData = new FormData();
+                      formData.append('file', file);
+                      formData.append('fileType', 'perfil');
+                
+                      const response = await axios.post(`${apiUrl}/api/profilePicture`, formData, {
+                        headers: {
+                          'Content-Type': 'multipart/form-data',
+                          Authorization: `Bearer ${getAccessToken()}`, // Agregar el token aquí
+                        },
+                      });
+                
+                      if (response?.data?.success) {
+                        const url = response.data.data.url; // Extraer la URL de la respuesta
+                        setImageUrl(url);
+                        notification.success(
+                          translations.photoUpload?.successTitle || 'Éxito',
+                          translations.photoUpload?.successMessage || 'Imagen subida correctamente'
+                        );
+                        await fetchUser(); // Actualizar el usuario después de subir la imagen
+                        onSuccess(response.data);
+                      } else {
+                        notification.error(
+                          translations.photoUpload?.errorTitle || 'Error',
+                          translations.photoUpload?.errorMessage || 'Error al subir la imagen'
+                        );
+                        onError(new Error('Error al subir la imagen'));
+                      }
+                    } catch (error) {
+                      notification.error(
+                        translations.photoUpload?.errorTitle || 'Error',
+                        error.message || translations.photoUpload?.errorMessage || 'No se pudo subir la imagen'
+                      );
+                      onError(error);
+                    } finally {
+                      setLoading(false); // Desactivar el spinner
+                    }
+                  }}
+                  accept=".jpg,.jpeg,.png,.pdf"
                 >
-                  {imageUrl ? (
+                  {loading ? (
+                    <Spin size="large" /> // Mostrar spinner mientras se sube la imagen
+                  ) : imageUrl ? (
                     <img 
                       src={imageUrl} 
                       alt="avatar" 
@@ -350,7 +423,9 @@ const EditarMiPerfil = ({ show, onClose }) => {
                         borderRadius: '50%' 
                       }} 
                     />
-                  ) : uploadButton}
+                  ) : (
+                    uploadButton
+                  )}
                 </Upload>
               </Form.Item>
               <div className="avatar-text">

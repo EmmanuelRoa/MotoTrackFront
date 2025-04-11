@@ -293,7 +293,7 @@ const VerPerfil = ({ visible, onClose, currentUser, isOwnProfile = false }) => {
       { label: "Email", value: userData?.correo || "---@mototrack.com" },
       { label: "Teléfono", value: userData?.datosPersonales?.telefono || "---" },
       { label: "Ubicación", value: `${userData?.datosPersonales?.ubicacion?.direccion + ' ' + userData?.datosPersonales?.ubicacion?.municipio + ' ' + userData?.datosPersonales?.ubicacion?.provincia}` || "Sede Central" },
-      { label: "Estado", value: isActive ? "Activo" : "Inactivo" }, // Agregar campo de estado
+      { label: "Estado", value: isActive ? "Activo" : "Deshabilitado" }, // Agregar campo de estado
       { label: "Fecha de registro", value: userData?.fechaCreacion ? new Date(userData.fechaCreacion).toLocaleDateString() : "---" },
       { 
         label: "Cargo", 
@@ -311,7 +311,7 @@ const VerPerfil = ({ visible, onClose, currentUser, isOwnProfile = false }) => {
           <motion.div variants={itemVariants}>
             <ResponsiveAvatar 
               size={isMobile ? 70 : 100} 
-              src={userData?.profileImage || userData?.avatar} 
+              src={userData?.ftPerfil || userData?.avatar} 
               icon={<UserOutlined />}
             />
           </motion.div>
@@ -325,7 +325,7 @@ const VerPerfil = ({ visible, onClose, currentUser, isOwnProfile = false }) => {
               {isActive ? (
                 <ActiveTag>Activo</ActiveTag>
               ) : (
-                <InactiveTag>Inactivo</InactiveTag>
+                <InactiveTag>Deshabilitado</InactiveTag>
               )}
             </motion.div>
             <motion.div variants={itemVariants}>

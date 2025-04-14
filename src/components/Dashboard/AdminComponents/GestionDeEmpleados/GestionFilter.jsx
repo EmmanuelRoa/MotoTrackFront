@@ -48,6 +48,7 @@ const GestionFilter = ({
 
   const handleApply = () => {
     const values = form.getFieldsValue();
+    console.log(values);
     onApplyFilters(values);
   };
 
@@ -56,7 +57,7 @@ const GestionFilter = ({
   };
 
   return (
-    <FilterSection 
+    <FilterSection
       title={t.filterTitle}
       isVisible={isVisible}
       onClose={onClose}

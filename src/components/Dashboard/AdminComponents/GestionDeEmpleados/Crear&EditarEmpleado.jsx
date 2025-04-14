@@ -5,7 +5,7 @@ import enUS from 'antd/es/date-picker/locale/en_US';
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
 import styled, { createGlobalStyle } from 'styled-components';
-import { CalendarOutlined } from '@ant-design/icons';
+import { CalendarOutlined, EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons';
 // Fix the path from contexts to context
 import { useLanguage } from '../../../../context/LanguageContext';
 import Modal from '../../CommonComponts/Modals';
@@ -134,6 +134,8 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
   const [selectedProvincia, setSelectedProvincia] = useState(null);
   const [municipios, setMunicipios] = useState([]);
   const [provincias, setProvincias] = useState([]);
+  const [showNewPassword, setShowNewPassword] = useState(false); // Estado para mostrar/ocultar nueva contraseña
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // Estado para mostrar/ocultar confirmar contraseña
 
   const api_url = import.meta.env.VITE_API_URL;
   const { getAccessToken } = useAuth();
@@ -468,14 +470,43 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
       console.log('Creating employee:', formattedData);
 
       try {
-        // Simular una operación de creación exitosa
-        // En un caso real, aquí harías la llamada a la API
-        notification.success(
-          texts.userCreated,
-          `${texts.userCreatedDesc} (${formattedData.nombres} ${formattedData.apellidos})`
-        );
+        const response = await axios.post(`${api_url}/api/user`, {
+          nombres: formattedData.nombres,
+          apellidos: formattedData.apellidos,
+          correo: formattedData.correo,
+          contraseña: formattedData.newPassword,
+          idTipoUsuario: formattedData.idTipoUsuario,
+          datosPersonales: {
+            cedula: formattedData.cedula,
+            fechaNacimiento: formattedData.fechaNacimiento,
+            estadoCivil: formattedData.estadoCivil,
+            sexo: formattedData.sexo,
+            telefono: formattedData.telefono,
+            idUbicacion: formattedData.ubicacion,
+            idTipoPersona: formattedData.tipoPersona,
+          }
+        }, {
+          headers: {
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+        });
 
-        //handleClose();
+        if (response.data.success) {
+          // Si la creación es exitosa, puedes manejar la respuesta aquí
+          console.log('User created successfully:', response.data.data);
+          notification.success(
+            texts.userCreated,
+            `${texts.userCreatedDesc} (${formattedData.nombres} ${formattedData.apellidos})`
+          );
+          onClose(); // Cerrar el modal después de crear el usuario
+        } else {
+          // Manejar el caso en que la creación no fue exitosa
+          console.error('Error creating user:', response.data.message);
+          notification.error(
+            texts.updateError,
+            texts.updateErrorDesc
+          );
+        }
       } catch (error) {
         console.error('Error creating employee:', error);
         notification.error(
@@ -489,6 +520,15 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
   console.log('Selected province:', empleadoData);
   // Agregar este console.log para depuración
   console.log('Form instance:', form); 
+
+  // Función para alternar visibilidad de contraseñas
+  const togglePasswordVisibility = (field) => {
+    if (field === 'newPassword') {
+      setShowNewPassword(!showNewPassword);
+    } else if (field === 'confirmPassword') {
+      setShowConfirmPassword(!showConfirmPassword);
+    }
+  };
 
   // Asegúrate de que GlobalStyle se renderice dentro del componente
   return (
@@ -621,7 +661,17 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
                     },
                   ]}
                 >
-                  <Inputs type="password" placeholder={texts.newPassword} />
+                  <Inputs
+                    type={showNewPassword ? 'text' : 'password'} // Cambiar entre texto y contraseña
+                    placeholder={texts.newPassword}
+                    suffix={
+                      showNewPassword ? (
+                        <EyeInvisibleOutlined onClick={() => togglePasswordVisibility('newPassword')} />
+                      ) : (
+                        <EyeOutlined onClick={() => togglePasswordVisibility('newPassword')} />
+                      )
+                    }
+                  />
                 </Form.Item>
               )}
 
@@ -643,7 +693,17 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
                     }),
                   ]}
                 >
-                  <Inputs type="password" placeholder={texts.confirmPassword} />
+                  <Inputs
+                    type={showConfirmPassword ? 'text' : 'password'} // Cambiar entre texto y contraseña
+                    placeholder={texts.confirmPassword}
+                    suffix={
+                      showConfirmPassword ? (
+                        <EyeInvisibleOutlined onClick={() => togglePasswordVisibility('confirmPassword')} />
+                      ) : (
+                        <EyeOutlined onClick={() => togglePasswordVisibility('confirmPassword')} />
+                      )
+                    }
+                  />
                 </Form.Item>
               )}
             </FormRow>

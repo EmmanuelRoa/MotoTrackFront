@@ -47,7 +47,7 @@ function AdminGestionEmpleado() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilters, setActiveFilters] = useState({
     cedula: '',
-    role: 'all',
+    cargo: 'all',
     status: 'all'
   });
   const [showCreateEditModal, setShowCreateEditModal] = useState(false);
@@ -154,10 +154,17 @@ function AdminGestionEmpleado() {
         );
       }
     } else {
-      console.log('search: ', search);
-      console.log('filters: ', filters);
-      if ((search && search.trim() === '' && filters.cedula && filters.cedula.trim() === '' && filters.cargo && filters.cargo === 'all' && filters.status && filters.status === 'all')) {
+      filters.search = ''; // Reset search term if empty
+      //console.log('filters: ', filters);
+      if (
+        (!filters.search || filters.search.trim() === '') && // Si search es vacío o no está definido
+        (!filters.cedula || filters.cedula.trim() === '') && // Si cedula es vacío o no está definido
+        (filters.cargo === 'all') && // Si cargo es "all"
+        (filters.status === 'all') // Si status es "all"
+      ) {
         result = originalData.data; // Reset to original data if search is empty
+        setFilteredData({ ...filteredData, data: result });
+        return;
       }
     }
 

@@ -73,7 +73,7 @@ export const exportTableToPdf = async ({
       RECHAZADO: 'Rechazado'
     }
   };
-  
+  console.log('data:', data);
   // Force Spanish translations
   const t = translations.es;
   
@@ -89,21 +89,36 @@ export const exportTableToPdf = async ({
     // Prepare data for the table
     // Map columns to format expected by jspdf-autotable
     const tableColumns = columns
-      .filter(col => col.key !== 'actions' && col.dataIndex !== 'actions' && col.key !== 'acciones') // Don't include action columns
-      .map(col => ({
+    .filter(col => col.key !== 'actions' && col.dataIndex !== 'actions' && col.key !== 'acciones') // Don't include action columns
+    .map(col => {
+      let dataKey;
+
+      // Asignar dataKey según el título de la columna
+      if (col.title === 'Nombre') {
+        dataKey = 'nombres';
+      } else if (col.title === 'Teléfono') {
+        dataKey = 'datosPersonales.telefono'; // Propiedad anidada
+      } else if (col.title === 'Cédula') {
+        dataKey = 'datosPersonales.cedula'; // Propiedad anidada
+      } else {
+        // Usar dataIndex o key como fallback
+        dataKey = Array.isArray(col.dataIndex) ? col.dataIndex.join('.') : col.dataIndex || col.key;
+      }
+
+      return {
         header: col.title,
-        dataKey: Array.isArray(col.dataIndex) ? col.dataIndex.join('.') : col.dataIndex || col.key
-      }));
+        dataKey
+      };
+    });
+
     
     // If transformData function is provided, use it
     let processedData = transformData ? transformData(data) : data;
-    
     // Map data to format expected by jspdf-autotable
-    const tableData = processedData.map(record => {
+    const tableData = processedData.data.map(record => {
       const row = {};
       tableColumns.forEach(col => {
         const dataKey = col.dataKey;
-        
         // Handle special case for estado/status
         if (dataKey === 'estado') {
           const statusValue = record[dataKey];
@@ -134,7 +149,6 @@ export const exportTableToPdf = async ({
           }
         } else {
           const value = record[dataKey];
-          
           // Check if value is an object with a 'nombre' property
           if (value && typeof value === 'object' && value.nombre) {
             row[dataKey] = value.nombre;

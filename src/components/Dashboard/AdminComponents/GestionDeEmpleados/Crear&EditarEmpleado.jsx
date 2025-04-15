@@ -134,6 +134,7 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
   const [selectedProvincia, setSelectedProvincia] = useState(null);
   const [municipios, setMunicipios] = useState([]);
   const [provincias, setProvincias] = useState([]);
+  const [cargos, setCargos] = useState([]);
   const [showNewPassword, setShowNewPassword] = useState(false); // Estado para mostrar/ocultar nueva contraseña
   const [showConfirmPassword, setShowConfirmPassword] = useState(false); // Estado para mostrar/ocultar confirmar contraseña
 
@@ -263,7 +264,6 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
     },
   };
 
-  console.log(empleadoData);
   // Get current language translations
   const texts = t[language] || t.es;
 
@@ -291,6 +291,29 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
     }
   }
 
+  const fetchCargos = async () => {
+    try {
+      const response = await axios.get(`${api_url}/api/tipoPersona`, {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+      });
+      if (response.data.success) {
+        setCargos(response.data.data);
+        return;
+      }
+      notification.error(
+        texts.updateError,
+        texts.updateErrorDesc
+      );
+    } catch (error) {
+      console.error('Error fetching provincias:', error);
+      notification.error(
+        texts.updateError,
+        texts.updateErrorDesc
+      );
+    }
+  }
 
   const fetchMunicipios = async (provinciaId) => {
     try {
@@ -326,6 +349,7 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
       // Resetear formulario
       form.resetFields();
       fetchProvincias();
+      fetchCargos();
       // Reset selectedProvincia and municipios by default
       setSelectedProvincia(null);
       setMunicipios([]);
@@ -361,11 +385,58 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
     }
   }, [visible, form, empleadoData, isEditing, language]);
 
+  useEffect(() => {
+    // Si hay un valor inicial para la provincia, ejecutar fetchMunicipios
+    const provinciaId = empleadoData?.datosPersonales?.ubicacion?.provincia?.id;
+    const municipioId = empleadoData?.datosPersonales?.ubicacion?.municipio?.id;
+  
+    if (provinciaId) {
+      fetchMunicipios(provinciaId).then(() => {
+        // Establecer el valor inicial del municipio en el formulario
+        if (municipioId) {
+          form.setFieldsValue({ municipio: municipioId });
+        }
+      });
+    }
+  }, [empleadoData, form]);
+
   const handleProvinciaChange = async (value) => {
     setSelectedProvincia(value);
-    console.log('Selected province:', value);
     await fetchMunicipios(value); // Fetch municipios based on selected provincia
     form.setFieldsValue({ municipio: undefined }); // Clear municipio when provincia changes
+  };
+
+  const handleMunicipioChange = async (value) => {
+    try {
+      // Realizar el PUT request a /ubicacion
+      const response = await axios.put(`${api_url}/api/ubicacion`, {
+        idUbicacion: empleadoData?.datosPersonales?.ubicacion?.id || null, // ID de la ubicación si existe
+        direccion: form.getFieldValue('direccion'), // Obtener la dirección del formulario
+        idMunicipio: value, // ID del municipio seleccionado
+      }, {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+      });
+
+      if (response.data.success) {
+        notification.success(
+          texts.userUpdated,
+          'La ubicación ha sido actualizada correctamente.'
+        );
+      } else {
+        notification.error(
+          texts.updateError,
+          'No se pudo actualizar la ubicación. Intente nuevamente.'
+        );
+      }
+    } catch (error) {
+      console.error('Error updating location:', error);
+      notification.error(
+        texts.updateError,
+        'Ocurrió un error al actualizar la ubicación.'
+      );
+    }
   };
 
   // Add a clean-up function when the modal is closed
@@ -417,9 +488,28 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
       });
 
       const changedPersonaFields = {};
-      ['cedula', 'sexo', 'estadoCivil', 'telefono', 'fechaNacimiento', 'municipio', 'provincia', 'direccion'].forEach((field) => {
-        if (empleadoData[field] !== formattedData[field]) {
-          changedPersonaFields[field] = formattedData[field];
+      ['cedula', 'sexo', 'estadoCivil', 'telefono', 'fechaNacimiento', 'municipio', 'provincia', 'direccion', 'idTipoPersona'].forEach((field) => {
+        let originalValue = empleadoData?.datosPersonales?.[field];
+        let newValue = formattedData[field];
+
+        // Normalizar valores para comparación
+        if (field === 'cedula' || field === 'telefono') {
+          // Eliminar guiones o espacios para comparar
+          originalValue = originalValue?.replace(/\D/g, '');
+          newValue = newValue?.replace(/\D/g, '');
+        } else if (field === 'fechaNacimiento') {
+          // Asegurarse de que ambas fechas estén en el mismo formato
+          originalValue = originalValue ? dayjs(originalValue).format('YYYY-MM-DD') : null;
+          newValue = newValue ? dayjs(newValue).format('YYYY-MM-DD') : null;
+        } else if (field === 'estadoCivil' || field === 'sexo') {
+          // Convertir a minúsculas para comparación
+          originalValue = originalValue?.toLowerCase();
+          newValue = newValue?.toLowerCase();
+        }
+
+        // Comparar valores normalizados
+        if (originalValue !== newValue) {
+          changedPersonaFields[field] = newValue;
         }
       });
 
@@ -431,27 +521,27 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
         );
         return;
       }
+      console.log('Empleado data: ', empleadoData);
+      console.log('Updating employee:', changedFields, changedPersonaFields);
 
       try {
-        // Ejecutar ambas solicitudes en paralelo
-        await Promise.all([
-          Object.keys(changedFields).length > 0
-            ? axios.put(`${api_url}/api/user`, {...changedFields, idUsuario: empleadoData?.id || null}, {
-                headers: {
-                  Authorization: `Bearer ${getAccessToken()}`,
-                },
-              })
-            : Promise.resolve(), // Si no hay cambios, resolver inmediatamente
+        const requestBody = {
+          id: empleadoData?.id || null,
+          ...changedFields, // Solo los campos que cambiaron
+          datosPersonales: Object.keys(changedPersonaFields).length > 0 ? changedPersonaFields : undefined, // Solo si hay cambios en datosPersonales
+        };
+      
+        // Verificar si el objeto es serializable
+        console.log('Request Body:', requestBody);
+        JSON.stringify(requestBody); // Esto lanzará un error si hay referencias circulares
+      
 
-          Object.keys(changedPersonaFields).length > 0
-            ? axios.put(`${api_url}/api/persona`, {...changedPersonaFields, idUsuario: empleadoData?.id || null}, {
-                headers: {
-                  Authorization: `Bearer ${getAccessToken()}`,
-                },
-              })
-            : Promise.resolve(), // Si no hay cambios, resolver inmediatamente
-        ]);
-
+        await axios.put(`${api_url}/api/user`, requestBody, {
+          headers: {
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+        });
+  
         // Mostrar notificación de éxito si ambas solicitudes tienen éxito
         notification.success(
           texts.userUpdated,
@@ -756,7 +846,7 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
                 label={texts.province}
                 name="provincia"
                 rules={[{ required: true, message: texts.selectProvince }]}
-                initialValue={empleadoData?.datosPersonales?.ubicacion?.provincia}
+                initialValue={empleadoData?.datosPersonales?.ubicacion?.provincia?.id}
               >
                 <Select 
                   placeholder={texts.selectProvince}
@@ -775,12 +865,13 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
                 label={texts.municipality}
                 name="municipio"
                 rules={[{ required: true, message: texts.selectMunicipality }]}
-                initialValue={empleadoData?.datosPersonales?.ubicacion?.municipio}
+                initialValue={empleadoData?.datosPersonales?.ubicacion?.municipio?.id}
               >
                 <Select 
                   placeholder={texts.selectMunicipality}
                   style={{ width: '100%', height: '44px' }}
-                  disabled={empleadoData?.datosPersonales?.ubicacion?.municipio ? false : !selectedProvincia}  // Esta línea ya deshabilita el select
+                  disabled={empleadoData?.datosPersonales?.ubicacion?.municipio?.id ? false : !selectedProvincia}  // Esta línea ya deshabilita el select
+                  onChange={handleMunicipioChange}
                 >
                   {municipios.map(municipio => (
                     <Select.Option key={municipio.id} value={municipio.id}>
@@ -795,12 +886,12 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
               label={texts.address}
               name="direccion"
               rules={[{ required: true, message: texts.enterAddress }]}
-              initialValue={ empleadoData && (`${empleadoData?.datosPersonales?.ubicacion?.direccion} ${empleadoData?.datosPersonales?.ubicacion?.sector}`)}
+              initialValue={ empleadoData && (`${empleadoData?.datosPersonales?.ubicacion?.direccion}`)}
             >
               <Inputs placeholder={texts.enterAddress} />
             </Form.Item>
 
-            {/* Add the Role selector field here */}
+            {/* Add the typeUser selector field here */}
             <Form.Item
               label={texts.typeUser}
               name="idTipoUsuario"
@@ -815,6 +906,25 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
               {typeUser.map(role => (
                 <Select.Option key={role.value} value={role.value} label={role.label}>
                 {role.label}
+                </Select.Option>
+              ))}
+              </Select>
+            </Form.Item>
+            
+            <Form.Item
+              label={texts.cargo}
+              name="idTipoPersona"
+              rules={[{ required: true, message: texts.selectRole }]}
+              initialValue={empleadoData?.datosPersonales?.tipoPersona?.id}
+            >
+              <Select 
+              style={{ width: '100%', height: '44px' }}
+              placeholder={texts.selectRole}
+              optionLabelProp="label"
+              >
+              {cargos.map(cargo => (
+                <Select.Option key={cargo.idtipopersona} value={cargo.idtipopersona} label={cargo.nombre}>
+                {cargo.nombre}
                 </Select.Option>
               ))}
               </Select>

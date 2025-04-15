@@ -292,7 +292,7 @@ const VerPerfil = ({ visible, onClose, currentUser, isOwnProfile = false }) => {
       { label: "Cédula", value: userData?.datosPersonales?.cedula || "---" },
       { label: "Email", value: userData?.correo || "---@mototrack.com" },
       { label: "Teléfono", value: userData?.datosPersonales?.telefono || "---" },
-      { label: "Ubicación", value: `${userData?.datosPersonales?.ubicacion?.direccion + ' ' + userData?.datosPersonales?.ubicacion?.municipio + ' ' + userData?.datosPersonales?.ubicacion?.provincia}` || "Sede Central" },
+      { label: "Ubicación", value: `${userData?.datosPersonales?.ubicacion?.direccion + ' ' + userData?.datosPersonales?.ubicacion?.municipio?.nombre + ' ' + userData?.datosPersonales?.ubicacion?.provincia?.nombre}` || "Sede Central" },
       { label: "Estado", value: isActive ? "Activo" : "Deshabilitado" }, // Agregar campo de estado
       { label: "Fecha de registro", value: userData?.fechaCreacion ? new Date(userData.fechaCreacion).toLocaleDateString() : "---" },
       { 

@@ -408,27 +408,31 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
 
   const handleMunicipioChange = async (value) => {
     try {
-      // Realizar el PUT request a /ubicacion
-      const response = await axios.put(`${api_url}/api/ubicacion`, {
-        idUbicacion: empleadoData?.datosPersonales?.ubicacion?.id || null, // ID de la ubicación si existe
-        direccion: form.getFieldValue('direccion'), // Obtener la dirección del formulario
-        idMunicipio: value, // ID del municipio seleccionado
-      }, {
-        headers: {
-          Authorization: `Bearer ${getAccessToken()}`,
-        },
-      });
+      if(isEditing){
+        // Realizar el PUT request a /ubicacion
+        const response = await axios.put(`${api_url}/api/ubicacion`, {
+          idUbicacion: empleadoData?.datosPersonales?.ubicacion?.id || null, // ID de la ubicación si existe
+          direccion: form.getFieldValue('direccion'), // Obtener la dirección del formulario
+          idMunicipio: value, // ID del municipio seleccionado
+        }, {
+          headers: {
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+        });
 
-      if (response.data.success) {
-        notification.success(
-          texts.userUpdated,
-          'La ubicación ha sido actualizada correctamente.'
-        );
+        if (response.data.success) {
+          notification.success(
+            texts.userUpdated,
+            'La ubicación ha sido actualizada correctamente.'
+          );
+        } else {
+          notification.error(
+            texts.updateError,
+            'No se pudo actualizar la ubicación. Intente nuevamente.'
+          );
+        }
       } else {
-        notification.error(
-          texts.updateError,
-          'No se pudo actualizar la ubicación. Intente nuevamente.'
-        );
+        return;
       }
     } catch (error) {
       console.error('Error updating location:', error);
@@ -521,8 +525,6 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
         );
         return;
       }
-      console.log('Empleado data: ', empleadoData);
-      console.log('Updating employee:', changedFields, changedPersonaFields);
 
       try {
         const requestBody = {
@@ -564,17 +566,18 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
           nombres: formattedData.nombres,
           apellidos: formattedData.apellidos,
           correo: formattedData.correo,
-          contraseña: formattedData.newPassword,
+          contrasena: formattedData.newPassword,
           idTipoUsuario: formattedData.idTipoUsuario,
-          datosPersonales: {
-            cedula: formattedData.cedula,
-            fechaNacimiento: formattedData.fechaNacimiento,
-            estadoCivil: formattedData.estadoCivil,
-            sexo: formattedData.sexo,
-            telefono: formattedData.telefono,
-            idUbicacion: formattedData.ubicacion,
-            idTipoPersona: formattedData.tipoPersona,
-          }
+          cedula: formattedData.cedula,
+          estado: formattedData.estado.toLowerCase(),
+          fechaNacimiento: formattedData.fechaNacimiento,
+          estadoCivil: formattedData.estadoCivil,
+          sexo: formattedData.sexo,
+          telefono: formattedData.telefono,
+          direccion: formattedData.direccion,
+          idMunicipio: formattedData.municipio,
+          idTipoPersona: formattedData.idTipoPersona,
+          idProvincia: formattedData.provincia,
         }, {
           headers: {
             Authorization: `Bearer ${getAccessToken()}`,
@@ -588,7 +591,7 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
             texts.userCreated,
             `${texts.userCreatedDesc} (${formattedData.nombres} ${formattedData.apellidos})`
           );
-          onClose(); // Cerrar el modal después de crear el usuario
+          handleClose();
         } else {
           // Manejar el caso en que la creación no fue exitosa
           console.error('Error creating user:', response.data.message);

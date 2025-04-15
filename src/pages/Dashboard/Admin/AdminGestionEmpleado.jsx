@@ -266,9 +266,10 @@ function AdminGestionEmpleado() {
     }
   };
 
-  const handleCloseModal = () => {
+  const handleCloseModal = async () => {
     setShowCreateEditModal(false);
     setSelectedEmployee(null);
+    await fetchDataEmployee(); // Refresh data after closing modal
   };
 
   return (

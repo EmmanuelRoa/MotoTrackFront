@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Empty, Tooltip } from 'antd';
+import { Typography, Empty, Tooltip, Spin } from 'antd';
 import { PlusOutlined, DownloadOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
@@ -13,6 +13,8 @@ import MainButton from '../../CommonComponts/MainButton';
 import DescargarCarnet from '../../CommonComponts/DescargarCarnet';
 import { mockMotocicletas, findMotoById, hasReachedActiveLimit } from '../../../../data/motorcycleService';
 import { useNotification } from '../../CommonComponts/ToastNotifications';
+import axios from 'axios';
+import { useAuth } from '../../../../context/AuthContext';
 
 const { Title } = Typography;
 
@@ -93,7 +95,9 @@ function MisMotocicletas({
   const [selectedMoto, setSelectedMoto] = useState(null);
   const [detailsVisible, setDetailsVisible] = useState(false);
   const notification = useNotification();
-  
+  const api_url = import.meta.env.VITE_API_URL;
+  const { getAccessToken } = useAuth();
+
   // Translation objects
   const translations = {
     en: {
@@ -110,6 +114,7 @@ function MisMotocicletas({
       noRejected: "You don't have rejected requests",
       fields: {
         plate: "License Plate",
+        color: "Color",
         chassis: "Chassis",
         registrationDate: "Registration Date",
         requestDate: "Request Date",
@@ -131,6 +136,7 @@ function MisMotocicletas({
       noRejected: "No tienes solicitudes rechazadas",
       fields: {
         plate: "Placa",
+        color: "Color",
         chassis: "Chasis",
         registrationDate: "Fecha de Registro",
         requestDate: "Fecha de Solicitud",
@@ -144,6 +150,28 @@ function MisMotocicletas({
   const t = translations[language] || translations.es;
   const defaultTitle = t.title;
   
+  const fetchSolicitude = async (estado) => {
+    try {
+      const response = await axios.get(`${api_url}/api/solicitud/mis-solicitudes`, {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+        params: { estado },
+      });
+      // console.log('Fetched solicitudes:', response.data);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching solicitudes:', error);
+      notification.error(
+        language === 'en' ? 'Error Fetching Requests' : 'Error al Obtener Solicitudes',
+        language === 'en'
+          ? 'An error occurred while fetching the requests. Please try again later.'
+          : 'Ocurrió un error al obtener las solicitudes. Por favor, inténtelo de nuevo más tarde.'
+      );
+      throw error;
+    }
+  };
+
   // Check URL for motorcycle ID to view
   useEffect(() => {
     const viewId = searchParams.get('view');
@@ -182,17 +210,18 @@ function MisMotocicletas({
   };
 
   const handleDownloadCard = (id) => {
+    console.log('selected moto: ', selectedMoto);
     // Find the motorcycle data by id
     const moto = findMotoById(id);
     if (!moto) return;
     
     // Prepare data for the carnet
     const carnetData = {
-      placa: moto.placa || 'N/A',
-      propietario: moto.propietario || 'N/A',
-      modelo: moto.modelo || 'N/A',
-      chasis: moto.chasis || 'N/A',
-      fechaEmision: moto.fechaRegistro || new Date().toLocaleDateString(),
+      placa: selectedMoto.matriculagenerada,
+      propietario: 'Propietario no especificado',
+      modelo: `${selectedMoto.marcanombre || ''} ${selectedMoto.modelonombre || ''} ${'('+ selectedMoto.año + ')' || ''}`,
+      chasis: selectedMoto.chasis || 'No especificado',
+      fechaEmision: selectedMoto.fechaemisionmatricula,
       registro: moto.id || 'N/A'
     };
     
@@ -212,154 +241,240 @@ function MisMotocicletas({
 
   // Component for Active Motorcycles tab
   const MotocicletasActivas = () => {
-    const activeMotos = getPreviewData(mockMotocicletas.activas);
-    
+    const [activeMotos, setActiveMotos] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+      const fetchActiveMotos = async () => {
+        try {
+          setLoading(true);
+          const data = await fetchSolicitude('Aprobada');
+          setActiveMotos(getPreviewData(data));
+        } catch (error) {
+          console.error('Error fetching active motorcycles:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchActiveMotos();
+    }, []);
+
     return (
       <TabContent>
-        {activeMotos.length > 0 ? (
-          activeMotos.map(moto => (
-            <SolicitudesCards
-              key={moto.id}
-              data={moto}
-              infoFields={[
-                { key: 'placa', label: t.fields.plate },
-                { key: 'chasis', label: t.fields.chassis },
-                { key: 'fechaRegistro', label: t.fields.registrationDate },
-                { key: 'tipoUso', label: t.fields.useType }
-              ]}
-              actions={[
-                {
-                  label: t.viewDetails,
-                  onClick: () => handleViewDetails(moto),
-                  primary: false
-                },
-                {
-                  component: (
-                    <DescargarCarnet
-                      motorcycleData={handleDownloadCard(moto.id)}
-                      showPreview={false}
-                      buttonProps={{
-                        onClick: () => {
-                          notification.success(
-                            language === 'en' ? 'Card Generated' : 'Carnet Generado',
-                            language === 'en' ? 'The motorcycle card has been successfully generated' : 'El carnet de motocicleta ha sido generado exitosamente'
-                          );
-                        }
-                      }}
-                    >
-                      <MainButton
-                        icon={<DownloadOutlined />}
+        <Spin spinning={loading}>
+          {activeMotos.length > 0 ? (
+            activeMotos.map(moto => (
+              <SolicitudesCards
+                key={moto.solicitud.idSolicitud}
+                data={moto}
+                infoFields={[
+                  { 
+                    key: 'matricula.matriculaGenerada', 
+                    label: t.fields.plate,
+                    getValue: (data) => data.matricula.matriculaGenerada
+                  },
+                  { 
+                    key: 'vehiculo.chasis', 
+                    label: t.fields.chassis,
+                    getValue: (data) => data.vehiculo.chasis
+                  },
+                  { 
+                    key: 'solicitud.fechaRegistro', 
+                    label: t.fields.registrationDate,
+                    getValue: (data) => new Date(data.solicitud.fechaRegistro).toLocaleDateString()
+                  },
+                  { 
+                    key: 'vehiculo.tipoUso', 
+                    label: t.fields.useType,
+                    getValue: (data) => data.vehiculo.tipoUso
+                  }
+                ]}
+                actions={[
+                  {
+                    label: t.viewDetails,
+                    onClick: () => handleViewDetails(moto),
+                    primary: false
+                  },
+                  {
+                    component: (
+                      <DescargarCarnet
+                        motorcycleData={{
+                          placa: moto.matricula.matriculaGenerada,
+                          propietario: `${moto.ciudadano.nombres} ${moto.ciudadano.apellidos}`,
+                          modelo: `${moto.vehiculo.marca.nombre} ${moto.vehiculo.modelo.nombre} (${moto.vehiculo.modelo.año})`,
+                          chasis: moto.vehiculo.chasis,
+                          fechaEmision: moto.matricula.fechaEmision,
+                          registro: moto.solicitud.idSolicitud
+                        }}
+                        showPreview={false}
+                        buttonProps={{
+                          onClick: () => {
+                            notification.success(
+                              language === 'en' ? 'Card Generated' : 'Carnet Generado',
+                              language === 'en' ? 'The motorcycle card has been successfully generated' : 'El carnet de motocicleta ha sido generado exitosamente'
+                            );
+                          }
+                        }}
                       >
-                        {t.downloadCard}
-                      </MainButton>
-                    </DescargarCarnet>
-                  ),
-                  showAsComponent: true
-                }
-              ]}
+                        <MainButton
+                          icon={<DownloadOutlined />}
+                        >
+                          {t.downloadCard}
+                        </MainButton>
+                      </DescargarCarnet>
+                    ),
+                    showAsComponent: true
+                  }
+                ]}
+              />
+            ))
+          ) : (
+            <Empty 
+              description={t.noActive} 
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
             />
-          ))
-        ) : (
-          <Empty 
-            description={t.noActive} 
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          />
-        )}
-        
-        {isPreview && onViewAll && mockMotocicletas.activas.length > 2 && (
-          <div style={{ textAlign: 'right', marginTop: 16 }}>
-            <MainButton type="link" onClick={onViewAll}>
-              {t.viewAll} ({mockMotocicletas.activas.length})
-            </MainButton>
-          </div>
-        )}
+          )}
+        </Spin>
       </TabContent>
     );
   };
 
   // Component for Pending Motorcycles tab
   const MotocicletasPendientes = () => {
-    const pendingMotos = getPreviewData(mockMotocicletas.pendientes);
+    const [pendingMotos, setPendingMotos] = useState([]);
+    const [loading, setLoading] = useState(true);
     
+    useEffect(() => {
+      const fetchPendingMotos = async () => {
+        try {
+          setLoading(true);
+          const data = await fetchSolicitude('Pendiente');
+          setPendingMotos(getPreviewData(data));
+        } catch (error) {
+          console.error('Error fetching pending motorcycles:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchPendingMotos();
+    }, []);
+
     return (
       <TabContent>
-        {pendingMotos.length > 0 ? (
-          pendingMotos.map(moto => (
-            <SolicitudesCards
-              key={moto.id}
-              data={moto}
-              infoFields={[
-                { key: 'chasis', label: t.fields.chassis },
-                { key: 'fechaRegistro', label: t.fields.requestDate },
-                { key: 'tipoUso', label: t.fields.useType }
-              ]}
-              actions={[
-                {
-                  label: t.viewRequest,
-                  onClick: () => handleViewDetails(moto),
-                  primary: false
-                }
-              ]}
+        <Spin spinning={loading}>
+          {pendingMotos.length > 0 ? (
+            pendingMotos.map(moto => (
+              <SolicitudesCards
+                key={moto.solicitud.idSolicitud}
+                data={moto}
+                infoFields={[
+                  { 
+                    key: 'vehiculo.modelo.color', 
+                    label: t.fields.color,
+                    getValue: (data) => data.vehiculo.modelo.color
+                  },
+                  { 
+                    key: 'vehiculo.chasis', 
+                    label: t.fields.chassis,
+                    getValue: (data) => data.vehiculo.chasis
+                  },
+                  { 
+                    key: 'solicitud.fechaRegistro', 
+                    label: t.fields.requestDate,
+                    getValue: (data) => new Date(data.solicitud.fechaRegistro).toLocaleDateString()
+                  },
+                  { 
+                    key: 'vehiculo.tipoUso', 
+                    label: t.fields.useType,
+                    getValue: (data) => data.vehiculo.tipoUso
+                  }
+                ]}
+                actions={[
+                  {
+                    label: t.viewRequest,
+                    onClick: () => handleViewDetails(moto),
+                    primary: false
+                  }
+                ]}
+              />
+            ))
+          ) : (
+            <Empty 
+              description={t.noPending} 
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
             />
-          ))
-        ) : (
-          <Empty 
-            description={t.noPending} 
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          />
-        )}
-        
-        {isPreview && onViewAll && mockMotocicletas.pendientes.length > 2 && (
-          <div style={{ textAlign: 'right', marginTop: 16 }}>
-            <MainButton type="link" onClick={onViewAll}>
-              {t.viewAll} ({mockMotocicletas.pendientes.length})
-            </MainButton>
-          </div>
-        )}
+          )}
+        </Spin>
       </TabContent>
     );
   };
 
   // Component for Rejected Motorcycles tab
   const MotocicletasRechazadas = () => {
-    const rejectedMotos = getPreviewData(mockMotocicletas.rechazadas);
+    const [rejectedMotos, setRejectedMotos] = useState([]);
+    const [loading, setLoading] = useState(true);
     
+    useEffect(() => {
+      const fetchRejectedMotos = async () => {
+        try {
+          setLoading(true);
+          const data = await fetchSolicitude('Rechazada');
+          setRejectedMotos(getPreviewData(data));
+        } catch (error) {
+          console.error('Error fetching rejected motorcycles:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchRejectedMotos();
+    }, []);
+
     return (
       <TabContent>
-        {rejectedMotos.length > 0 ? (
-          rejectedMotos.map(moto => (
-            <SolicitudesCards
-              key={moto.id}
-              data={moto}
-              infoFields={[
-                { key: 'chasis', label: t.fields.chassis },
-                { key: 'fechaRegistro', label: t.fields.requestDate },
-                { key: 'motivoRechazo', label: t.fields.rejectionReason },
-                { key: 'tipoUso', label: t.fields.useType }
-              ]}
-              actions={[
-                {
-                  label: t.viewDetails,
-                  onClick: () => handleViewDetails(moto),
-                  primary: false
-                }
-              ]}
+        <Spin spinning={loading}>
+          {rejectedMotos.length > 0 ? (
+            rejectedMotos.map(moto => (
+              <SolicitudesCards
+                key={moto.solicitud.idSolicitud}
+                data={moto}
+                infoFields={[
+                  { 
+                    key: 'solicitud.estadoDecision', 
+                    label: t.fields.plate,
+                    getValue: (data) => data.solicitud.estadoDecision
+                  },
+                  { 
+                    key: 'vehiculo.chasis', 
+                    label: t.fields.chassis,
+                    getValue: (data) => data.vehiculo.chasis
+                  },
+                  { 
+                    key: 'solicitud.motivoRechazo', 
+                    label: t.fields.rejectionReason,
+                    getValue: (data) => data.solicitud.motivoRechazo || 'No especificado'
+                  },
+                  { 
+                    key: 'vehiculo.tipoUso', 
+                    label: t.fields.useType,
+                    getValue: (data) => data.vehiculo.tipoUso
+                  }
+                ]}
+                actions={[
+                  {
+                    label: t.viewDetails,
+                    onClick: () => handleViewDetails(moto),
+                    primary: false
+                  }
+                ]}
+              />
+            ))
+          ) : (
+            <Empty 
+              description={t.noRejected} 
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
             />
-          ))
-        ) : (
-          <Empty 
-            description={t.noRejected} 
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          />
-        )}
-        
-        {isPreview && onViewAll && mockMotocicletas.rechazadas.length > 2 && (
-          <div style={{ textAlign: 'right', marginTop: 16 }}>
-            <MainButton type="link" onClick={onViewAll}>
-              {t.viewAll} ({mockMotocicletas.rechazadas.length})
-            </MainButton>
-          </div>
-        )}
+          )}
+        </Spin>
       </TabContent>
     );
   };

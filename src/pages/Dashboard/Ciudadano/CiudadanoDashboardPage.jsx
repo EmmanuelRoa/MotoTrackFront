@@ -55,7 +55,7 @@ function CiudadanoDashboardPage() {
       <Row gutter={[24, 24]}>
         <Col xs={24} sm={24} md={24} lg={24} xl={24}>
           
-            <MisMotocicletas 
+            <MisMotocicletas
               isPreview={true}
               onViewAll={handleViewAllMotos}
               onAddNew={handleAddNewMoto}

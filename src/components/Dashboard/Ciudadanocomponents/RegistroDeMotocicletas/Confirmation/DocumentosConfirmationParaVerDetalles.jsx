@@ -339,30 +339,34 @@ const DocumentCard = ({
       <Modal 
         show={previewVisible} 
         onClose={handleClose}
-        width={fileType.toUpperCase() === "JPG" || fileType.toUpperCase() === "PNG" ? "80%" : "500px"}
-        height={fileType.toUpperCase() === "JPG" || fileType.toUpperCase() === "PNG" ? "80vh" : "auto"}
+        width={fileType.toUpperCase() === "JPG" || fileType.toUpperCase() === "PNG" || fileType.toUpperCase() === "JPEG" ? "80%" : "500px"}
+        height={fileType.toUpperCase() === "JPG" || fileType.toUpperCase() === "PNG" || fileType.toUpperCase() === "JPEG" ? "80vh" : "auto"}
         mobileHeight="70vh"
-        zIndex={9999} // Add the highest z-index here
+        zIndex={9999}
       >
         <PreviewContainer>
           <PreviewTitle $isDarkMode={isDarkMode}>
             {title} - {fileName}
           </PreviewTitle>
           
-          {fileType.toUpperCase() === "JPG" || fileType.toUpperCase() === "PNG" ? (
+          {fileType && (fileType.toUpperCase() === "JPG" || fileType.toUpperCase() === "PNG" || fileType.toUpperCase() === "JPEG") ? (
             <PreviewImage src={filePath} alt={fileName} />
           ) : (
-            <>
-              <p>Vista previa de PDF no disponible directamente.</p>
-              <DownloadLink 
-                href={filePath} 
-                download={fileName}
-                color={primaryColor} // Use primaryColor here instead of iconColor
-                primaryColor={primaryColor} // Pass primaryColor as prop
-              >
-                Descargar PDF
-              </DownloadLink>
-            </>
+            fileType && fileType.toUpperCase() === "PDF" ? (
+              <>
+                <p>Vista previa de PDF no disponible directamente.</p>
+                <DownloadLink 
+                  href={filePath} 
+                  download={fileName}
+                  color={primaryColor}
+                  primaryColor={primaryColor}
+                >
+                  Descargar PDF
+                </DownloadLink>
+              </>
+            ) : (
+              <p>Tipo de archivo no soportado.</p>
+            )
           )}
         </PreviewContainer>
       </Modal>
@@ -370,19 +374,39 @@ const DocumentCard = ({
   );
 };
 
-// Add utility function to extract file extension from a path
 const getFileExtension = (filePath) => {
-  // Handle cases where filePath might be a URL or file object in the future
-  if (typeof filePath !== 'string') return 'UNKNOWN';
-  
-  // For imported files in webpack, extract the extension from filename
-  const fileName = filePath.split('/').pop();
-  const extension = fileName.split('.').pop().toUpperCase();
-  return extension;
+  // Verificar si filePath es una cadena válida
+  if (typeof filePath !== 'string' || !filePath.includes('.')) return 'UNKNOWN';
+
+  try {
+    // Extraer la última parte de la URL (el nombre del archivo)
+    const fileName = filePath.split('/').pop();
+    // Extraer la extensión del archivo
+    const extension = fileName.split('.').pop().toUpperCase();
+    return extension;
+  } catch (error) {
+    console.error('Error extracting file extension:', error);
+    return 'UNKNOWN';
+  }
+};
+
+const getFileNameFromUrl = (url) => {
+  if (typeof url !== 'string' || !url.includes('/')) {
+    return 'UNKNOWN';
+  }
+
+  try {
+    // Extraer la última parte de la URL (el nombre del archivo)
+    const fileName = url.split('/').pop();
+    return fileName || 'UNKNOWN';
+  } catch (error) {
+    console.error('Error extracting file name:', error);
+    return 'UNKNOWN';
+  }
 };
 
 // Demo de los cuatro tipos de documentos
-export default function DocumentosConfirmation() {
+export default function DocumentosConfirmation({ data }) {
   const { currentTheme } = useTheme();
   const { language } = useLanguage();
   const isDarkMode = currentTheme === 'themeDark';
@@ -436,7 +460,7 @@ export default function DocumentosConfirmation() {
       }
     }
   };
-  
+
   // Get current language translations, defaulting to Spanish
   const t = translations[language] || translations.es;
 
@@ -445,50 +469,50 @@ export default function DocumentosConfirmation() {
     {
       id: 1,
       title: t.license.title,
-      fileName: t.license.fileName,
+      fileName: getFileNameFromUrl(data?.solicitud?.documentos?.licencia),
       description: t.license.description,
-      fileType: getFileExtension(licenciaJPG),
+      fileType: getFileExtension(data?.solicitud?.documentos?.licencia),
       iconColor: "#1890ff", // Blue
       bgColor: "#1890ff",
       iconBgColor: "#e6f7ff",
       icon: <IdcardOutlined />,
-      filePath: licenciaJPG
+      filePath: data?.solicitud?.documentos?.licencia
     },
     {
       id: 2,
       title: t.insurance.title,
-      fileName: t.insurance.fileName,
+      fileName: getFileNameFromUrl(data?.solicitud?.documentos?.seguro),
       description: t.insurance.description,
-      fileType: getFileExtension(seguroPNG),
+      fileType: getFileExtension(data?.solicitud?.documentos?.seguro),
       iconColor: "#52c41a", // Green
       bgColor: "#52c41a",
       iconBgColor: "#f6ffed",
       icon: <SafetyCertificateOutlined />,
-      filePath: seguroPNG
+      filePath: data?.solicitud?.documentos?.seguro
     },
     {
       id: 3,
       title: t.id.title,
-      fileName: t.id.fileName,
+      fileName: getFileNameFromUrl(data?.solicitud?.documentos?.cedula),
       description: t.id.description,
-      fileType: getFileExtension(cedulaJPG),
+      fileType: getFileExtension(data?.solicitud?.documentos?.cedula),
       iconColor: "#fa8c16", // Orange
       bgColor: "#fa8c16",
       iconBgColor: "#fff7e6",
       icon: <UserOutlined />,
-      filePath: cedulaJPG
+      filePath: data?.solicitud?.documentos?.cedula
     },
     {
       id: 4,
       title: t.registration.title,
-      fileName: t.registration.fileName,
+      fileName: getFileNameFromUrl(data?.solicitud?.documentos?.facturaVehiculo),
       description: t.registration.description,
-      fileType: getFileExtension(registroMunicipalPDF),
+      fileType: getFileExtension(data?.solicitud?.documentos?.facturaVehiculo),
       iconColor: "#722ed1", // Purple
       bgColor: "#722ed1",
       iconBgColor: "#f9f0ff",
       icon: <CarOutlined />,
-      filePath: registroMunicipalPDF
+      filePath: data?.solicitud?.documentos?.facturaVehiculo
     }
   ];
 

@@ -345,7 +345,7 @@ const VerPerfil = ({ visible, onClose, currentUser, isOwnProfile = false }) => {
   const renderCiudadanoProfile = () => {
     const fields = [
       { label: "Email", value: userData?.correo || "email@gmail.com" },
-      { label: "Fecha de registro", value: userData?.fechaCreacion ? new Date(userData.createdAt).toLocaleDateString() : "---" }
+      { label: "Fecha de registro", value: userData?.fechaCreacion ? new Date(userData?.fechaCreacion).toLocaleDateString() : "---" }
     ];
     
     return (
@@ -354,13 +354,13 @@ const VerPerfil = ({ visible, onClose, currentUser, isOwnProfile = false }) => {
           <motion.div variants={itemVariants}>
             <ResponsiveAvatar 
               size={isMobile ? 70 : 100} 
-              src={userData?.profileImage || "https://i.pravatar.cc/150?img=4"} 
+              src={userData?.ftPerfil || userData?.avatar} 
               icon={<UserOutlined />}
             />
           </motion.div>
           <motion.div variants={itemVariants}>
             <ResponsiveTitle level={3} style={{ marginTop: isMobile ? 12 : 16, marginBottom: isMobile ? 6 : 8 }}>
-              {userData?.nombres} {userData?.apellidos}
+              {userData?.firstName || userData?.nombres} {userData?.lastName || userData?.apellidos}
             </ResponsiveTitle>
           </motion.div>
           <StatusBadges $badges={2}>

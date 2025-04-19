@@ -112,7 +112,7 @@ function SolicitudesCards({
     <StyledCard {...cardProps}>
       <TitleContainer>
         <MotorcycleTitle level={5}>
-          {(data.vehiculo.marca.nombre + ' ' + data.vehiculo.modelo.nombre + ' ' + data.vehiculo.modelo.año) || 'No disponible'}
+          {(data.vehiculo.marca.nombre + ' ' + data.vehiculo.modelo.nombre + ' ' + data.vehiculo.año) || 'No disponible'}
         </MotorcycleTitle>
         {data.solicitud.estadoDecision && <StatusTag status={mapApiStatusToInternal(data.solicitud.estadoDecision)} />}
       </TitleContainer>

@@ -73,6 +73,8 @@ const DatosMotocicletasConfirmation = ({ motoData }) => {
   
   const t = translations[language] || translations.es;
   
+  console.log("DatosMotocicletasConfirmation está pasando motoData:", motoData);
+  
   return (
     <>
       <DataRow gutter={[16, 0]}>
@@ -89,18 +91,18 @@ const DatosMotocicletasConfirmation = ({ motoData }) => {
       <DataRow gutter={[16, 0]}>
         <Col xs={24} sm={12}>
           <DataLabel>{t.year}</DataLabel>
-          <DataValue>{motoData.vehiculo.modelo.año || "No disponible"}</DataValue>
+          <DataValue>{motoData.vehiculo.año || "No disponible"}</DataValue>
         </Col>
         <Col xs={24} sm={12}>
           <DataLabel>{t.color}</DataLabel>
-          <DataValue>{motoData.vehiculo.modelo.color || "No disponible"}</DataValue>
+          <DataValue>{motoData.vehiculo.color || "No disponible"}</DataValue>
         </Col>
       </DataRow>
       
       <DataRow gutter={[16, 0]}>
         <Col xs={24} sm={12}>
           <DataLabel>{t.engineSize}</DataLabel>
-          <DataValue>{motoData.vehiculo.modelo.cilindraje || "No disponible"} cc</DataValue>
+          <DataValue>{motoData.vehiculo.cilindraje || "No disponible"}</DataValue>
         </Col>
         <Col xs={24} sm={12}>
           <DataLabel>{t.useType}</DataLabel>

@@ -86,7 +86,26 @@ export const exportTableToPdf = async ({
       throw new Error('jsPDF library not loaded');
     }
 
-    // Prepare data for the table
+    // Helper function to check if data is in flat format
+    const isFlatFormat = (item) => {
+      return item && typeof item === 'object' && 
+             ('chasis' in item || 'id' in item) && 
+             !('vehiculo' in item);
+    };
+
+    // Process the data based on its format
+    let processedData = data;
+    
+    // If data is wrapped in a data property, extract it
+    if (data && data.data) {
+      processedData = data.data;
+    }
+
+    // Transform the data if needed
+    if (transformData) {
+      processedData = transformData(processedData);
+    }
+
     // Map columns to format expected by jspdf-autotable
     const tableColumns = columns
     .filter(col => col.key !== 'actions' && col.dataIndex !== 'actions' && col.key !== 'acciones') // Don't include action columns
@@ -100,7 +119,19 @@ export const exportTableToPdf = async ({
         dataKey = 'datosPersonales.telefono'; // Propiedad anidada
       } else if (col.title === 'Cédula') {
         dataKey = 'datosPersonales.cedula'; // Propiedad anidada
-      } else {
+      } else if (col.title === 'ID') {
+        dataKey = 'id';
+      } else if (col.title === 'Propietario') {
+        dataKey = 'ciudadano';
+      } else if (col.title === 'Marca') {
+        dataKey = 'marca';
+      } else if (col.title === 'Modelo') {
+        dataKey = 'modelo';
+      } else if (col.title === 'Fecha') {
+        dataKey = 'fechaSolicitud';
+      } else if (col.title === 'Estado') {
+        dataKey = 'estado';
+      }else {
         // Usar dataIndex o key como fallback
         dataKey = Array.isArray(col.dataIndex) ? col.dataIndex.join('.') : col.dataIndex || col.key;
       }
@@ -111,57 +142,59 @@ export const exportTableToPdf = async ({
       };
     });
 
-    
-    // If transformData function is provided, use it
-    let processedData = transformData ? transformData(data) : data;
     // Map data to format expected by jspdf-autotable
-    const tableData = processedData.data.map(record => {
-      const row = {};
-      tableColumns.forEach(col => {
-        const dataKey = col.dataKey;
-        // Handle special case for estado/status
-        if (dataKey === 'estado') {
-          const statusValue = record[dataKey];
-          row[dataKey] = t[statusValue] || statusValue; // Use translation if available
-          return;
-        }
-        
-        // Handle special case for asignadoA (handle object with nombre property)
-        if (dataKey === 'asignadoA') {
-          const assignedTo = record[dataKey];
-          row[dataKey] = assignedTo && assignedTo.nombre ? assignedTo.nombre : '-';
-          return;
-        }
-        
-        if (dataKey.includes('.')) {
-          // Handle nested properties
-          const keys = dataKey.split('.');
-          let value = record;
-          for (const key of keys) {
-            value = value && value[key];
+    const tableData = processedData.map(record => {
+      // Check if the record is in flat format
+      if (isFlatFormat(record)) {
+        // Handle flat format directly
+        return {
+          id: record.id,
+          ciudadano: record.ciudadano,
+          fechaSolicitud: record.fechaSolicitud,
+          marca: record.marca,
+          modelo: record.modelo,
+          chasis: record.chasis,
+          estado: t[record.estado] || record.estado,
+          fechaDecision: record.fechaDecision
+        };
+      } else {
+        // Handle nested format
+        const row = {};
+        tableColumns.forEach(col => {
+          const dataKey = col.dataKey;
+          
+          if (dataKey === 'estado') {
+            const statusValue = record.solicitud?.estadoDecision;
+            row[dataKey] = t[statusValue] || statusValue;
+            return;
           }
           
-          // Check if value is an object with a 'nombre' property (common pattern)
-          if (value && typeof value === 'object' && value.nombre) {
-            row[dataKey] = value.nombre;
+          if (dataKey.includes('.')) {
+            const keys = dataKey.split('.');
+            let value = record;
+            for (const key of keys) {
+              value = value && value[key];
+            }
+            
+            if (value && typeof value === 'object' && value.nombre) {
+              row[dataKey] = value.nombre;
+            } else {
+              row[dataKey] = value !== undefined && value !== null ? String(value) : '';
+            }
           } else {
-            row[dataKey] = value !== undefined && value !== null ? String(value) : '';
+            const value = record[dataKey];
+            if (value && typeof value === 'object' && value.nombre) {
+              row[dataKey] = value.nombre;
+            } else {
+              row[dataKey] = value !== undefined && value !== null ? String(value) : '';
+            }
           }
-        } else {
-          const value = record[dataKey];
-          // Check if value is an object with a 'nombre' property
-          if (value && typeof value === 'object' && value.nombre) {
-            row[dataKey] = value.nombre;
-          } else {
-            row[dataKey] = value !== undefined && value !== null 
-              ? String(value) 
-              : '';
-          }
-        }
-      });
-      return row;
+        });
+        return row;
+      }
     });
 
+    console.log('tableData:', tableData);
     // Create the document
     const doc = new jsPDF({
       orientation: 'landscape',

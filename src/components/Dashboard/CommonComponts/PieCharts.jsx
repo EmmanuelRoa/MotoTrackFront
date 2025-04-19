@@ -11,6 +11,8 @@ import styled from 'styled-components';
 import { useTheme } from '../../../context/ThemeContext';
 import { usePrimaryColor } from '../../../context/PrimaryColorContext';
 import { useLanguage } from '../../../context/LanguageContext';
+import { useAuth } from '../../../context/AuthContext';
+import axios from 'axios';
 
 // Register ECharts components
 echarts.use([
@@ -231,7 +233,40 @@ const PieChartComponent = ({ title, data, height = 250 }) => {
 
 export const DistribucionPorMarca = () => {
   const { language } = useLanguage();
-  
+  const api_url = import.meta.env.VITE_API_URL;
+  const { getAccessToken } = useAuth();
+  const [brands, setBrands] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
+
+  useEffect(() => {
+    const fetchBrands = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(`${api_url}/api/statistics/empleado`, {
+          headers: {
+            Authorization: `Bearer ${getAccessToken()}`
+          }
+        });
+
+        if (response.data.success) {
+          setBrands(response.data.data.distribucion.marca);
+        }
+      } catch (error) {
+        console.error('Error fetching brands:', error);
+        notification.error({
+          message: language === 'es' ? 'Error' : 'Error',
+          description: language === 'es' 
+            ? 'Error al cargar las marcas' 
+            : 'Error loading brands',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBrands();
+  }, []); 
+
   const translations = {
     es: {
       title: 'Distribución por Marca',
@@ -253,16 +288,26 @@ export const DistribucionPorMarca = () => {
 
   const t = translations[language] || translations.es;
 
+  // Transform brands data into the required format
+  const chartData = brands.map((brand, index) => {
+    const colors = [
+      '#1890ff', '#fa8c16', '#52c41a', '#722ed1', '#f5222d', 
+      '#13c2c2', '#eb2f96', '#faad14', '#a0d911', '#2f54eb',
+      '#fa541c', '#9254de', '#36cfc9', '#bae637', '#40a9ff',
+      '#ffa940', '#73d13d', '#597ef7', '#ff4d4f', '#95de64'
+    ];
+    return {
+      name: brand.marca,
+      value: brand.cantidad,
+      percentage: brand.porcentaje,
+      color: colors[index % colors.length]
+    }
+  });
+
   return (
     <PieChartComponent 
       title={t.title}
-      data={[
-        { name: t.honda, value: 38, percentage: '38%', color: '#1890ff' },
-        { name: t.yamaha, value: 25, percentage: '25%', color: '#fa8c16' },
-        { name: t.suzuki, value: 19, percentage: '19%', color: '#52c41a' },
-        { name: t.bajaj, value: 13, percentage: '13%', color: '#722ed1' },
-        { name: t.others, value: 6, percentage: '6%', color: '#f5222d' }
-      ]}
+      data={chartData}
     />
   );
 };
@@ -304,10 +349,43 @@ export const DistribucionPorTipo = () => {
 
 export const DistribucionPorZona = () => {
   const { language } = useLanguage();
-  
+  const api_url = import.meta.env.VITE_API_URL;
+  const { getAccessToken } = useAuth();
+  const [zone, setZone] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
+
+  useEffect(() => {
+    const fetchZone = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(`${api_url}/api/statistics/empleado`, {
+          headers: {
+            Authorization: `Bearer ${getAccessToken()}`
+          }
+        });
+
+        if (response.data.success) {
+          setZone(response.data.data.distribucion.municipio);
+        }
+      } catch (error) {
+        console.error('Error fetching zones:', error);
+        notification.error({
+          message: language === 'es' ? 'Error' : 'Error',
+          description: language === 'es' 
+            ? 'Error al cargar las zonas' 
+            : 'Error loading zonas',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchZone();
+  }, []); 
+
   const translations = {
     es: {
-      title: 'Distribución en Santo Domingo Este',
+      title: 'Distribución en Santo Domingo',
       frailes: 'Los Frailes',
       sanLuis: 'San Luis',
       caleta: 'La Caleta',
@@ -315,7 +393,7 @@ export const DistribucionPorZona = () => {
       others: 'Otros'
     },
     en: {
-      title: 'Distribution in Santo Domingo East',
+      title: 'Distribution in Santo Domingo',
       frailes: 'Los Frailes',
       sanLuis: 'San Luis',
       caleta: 'La Caleta',
@@ -326,16 +404,26 @@ export const DistribucionPorZona = () => {
 
   const t = translations[language] || translations.es;
 
+  // Transform brands data into the required format
+  const chartData = zone.map((place, index) => {
+    const colors = [
+      '#1890ff', '#fa8c16', '#52c41a', '#722ed1', '#f5222d', 
+      '#13c2c2', '#eb2f96', '#faad14', '#a0d911', '#2f54eb',
+      '#fa541c', '#9254de', '#36cfc9', '#bae637', '#40a9ff',
+      '#ffa940', '#73d13d', '#597ef7', '#ff4d4f', '#95de64'
+    ];
+    return {
+      name: place.municipio,
+      value: place.cantidad,
+      percentage: place.porcentaje,
+      color: colors[index % colors.length]
+    }
+  });
+
   return (
     <PieChartComponent 
       title={t.title}
-      data={[
-        { name: t.frailes, value: 38, percentage: '38%', color: '#1890ff' },
-        { name: t.sanLuis, value: 20, percentage: '20%', color: '#fa8c16' },
-        { name: t.caleta, value: 19, percentage: '19%', color: '#52c41a' },
-        { name: t.victoria, value: 8, percentage: '8%', color: '#722ed1' },
-        { name: t.others, value: 15, percentage: '15%', color: '#f5222d' }
-      ]}
+      data={chartData}
     />
   );
 };

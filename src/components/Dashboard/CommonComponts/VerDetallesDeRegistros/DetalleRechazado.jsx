@@ -225,7 +225,7 @@ const ButtonsContainer = styled.div`
 /**
  * DetalleRechazado - Component to display rejection details for a motorcycle registration
  */
-const DetalleRechazado = ({ data = {}, onEditRequest }) => {
+const DetalleRechazado = ({ data = {}, isCityzen, onEditRequest }) => {
   const { theme, currentTheme } = useTheme();
   const { language } = useLanguage();
   const isDarkMode = currentTheme === 'themeDark';
@@ -340,16 +340,20 @@ const DetalleRechazado = ({ data = {}, onEditRequest }) => {
             {rejectionData.detalleRechazo}
           </TimelineItemDescription>
         </RejectionReasonCard>
-
-        <ButtonsContainer>
-          <MainButton 
-            icon={<PlusCircleOutlined />}
-            onClick={handleNewRequest}
-            size={window.innerWidth <= 480 ? "middle" : "default"}
-          >
-            {t.createNewRequest}
-          </MainButton>
-        </ButtonsContainer>
+        
+        {
+          isCityzen && (
+            <ButtonsContainer>
+              <MainButton 
+                icon={<PlusCircleOutlined />}
+                onClick={handleNewRequest}
+                size={window.innerWidth <= 480 ? "middle" : "default"}
+              >
+                {t.createNewRequest}
+              </MainButton>
+            </ButtonsContainer>
+          )
+        }
       </StatusCard>
 
       <TimelineContainer>

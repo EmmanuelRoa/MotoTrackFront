@@ -87,7 +87,6 @@ const DatosPersonalesConfirmation = ({ userData }) => {
     return statusMap[language]?.[status] || statusMap.es[status] || status;
   };
 
-  console.log("DatosPersonalesConfirmation userData:", userData);
   // Helper function to format cedula
   const formatCedula = (cedula) => {
     if (!cedula) return "No disponible";
@@ -115,44 +114,67 @@ const DatosPersonalesConfirmation = ({ userData }) => {
       <DataRow gutter={[16, 0]}>
         <Col xs={24} sm={12}>
           <DataLabel>{t.fullName}</DataLabel>
-          <DataValue>{`${userData.nombres} ${userData.apellidos}` || "No disponible"}</DataValue>
+          <DataValue>
+            {
+              (userData?.nombres && userData?.apellidos) 
+              ? `${userData.nombres} ${userData.apellidos}` 
+              : (userData?.nombreCompleto) ? userData?.nombreCompleto : "No disponible"
+            }
+          </DataValue>
         </Col>
         <Col xs={24} sm={12}>
           <DataLabel>{t.birthDate}</DataLabel>
-          <DataValue>{new Date(userData.fechaNacimiento).toLocaleDateString() || "No disponible"}</DataValue>
+          <DataValue>
+            {
+              (userData?.fechaNacimiento) 
+              ? new Date(userData?.fechaNacimiento).toLocaleDateString() 
+              : "No disponible"
+            }
+          </DataValue>
         </Col>
       </DataRow>
       
       <DataRow gutter={[16, 0]}>
         <Col xs={24} sm={12}>
           <DataLabel>{t.gender}</DataLabel>
-          <DataValue>{userData.sexo || "No disponible"}</DataValue>
+          <DataValue>{userData?.sexo || "No disponible"}</DataValue>
         </Col>
         <Col xs={24} sm={12}>
           <DataLabel>{t.id}</DataLabel>
-          <DataValue>{formatCedula(userData.cedula) || "No disponible"}</DataValue>
+          <DataValue>
+            {
+              (userData?.cedula) 
+              ? formatCedula(userData?.cedula)
+              : "No disponible"
+            }
+          </DataValue>
         </Col>
       </DataRow>
       
       <DataRow gutter={[16, 0]}>
         <Col xs={24} sm={12}>
           <DataLabel>{t.phone}</DataLabel>
-          <DataValue>{formatPhone(userData.telefono) || "No disponible"}</DataValue>
+          <DataValue>{formatPhone(userData?.telefono) || "No disponible"}</DataValue>
         </Col>
         <Col xs={24} sm={12}>
           <DataLabel>{t.maritalStatus}</DataLabel>
-          <DataValue>{getMaritalStatus(userData.estadoCivil) || "No disponible"}</DataValue>
+          <DataValue>{getMaritalStatus(userData?.estadoCivil) || "No disponible"}</DataValue>
         </Col>
       </DataRow>
       
       <DataRow gutter={[16, 0]}>
         <Col xs={24} sm={12}>
           <DataLabel>{t.email}</DataLabel>
-          <DataValue>{userData.correo || "No disponible"}</DataValue>
+          <DataValue>{userData?.correo || "No disponible"}</DataValue>
         </Col>
         <Col xs={24} sm={12}>
           <DataLabel>{t.address}</DataLabel>
-          <DataValue>{`${userData.ubicacion.direccion}, ${userData.ubicacion.municipio.nombre}, ${userData.ubicacion.provincia.nombre}` || "No disponible"}</DataValue>
+          <DataValue>
+            {
+             (userData?.ubicacion?.direccion) ? `${userData?.ubicacion?.direccion}, ${userData?.ubicacion?.municipio?.nombre}, ${userData?.ubicacion?.provincia?.nombre}`
+             : (userData?.direccion) ? userData.direccion : "No disponible"
+            }
+          </DataValue>
         </Col>
       </DataRow>
     </>

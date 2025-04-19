@@ -80,13 +80,15 @@ const LimitMessage = styled.span`
  * @param {boolean} props.isPreview - Whether this is a preview section (with limited number of items)
  * @param {Function} props.onAddNew - Function to call when adding a new motorcycle
  * @param {Function} props.onViewAll - Function to call when viewing all motorcycles
+ * @param {Function} props.onRefreshMetrics - Function to call when refreshing metrics
  */
 function MisMotocicletas({ 
   showHeader = true, 
   title, 
   isPreview = false,
   onAddNew,
-  onViewAll
+  onViewAll,
+  onRefreshMetrics // Add this prop
 }) {
   const { primaryColor } = usePrimaryColor();
   const { language } = useLanguage();
@@ -97,6 +99,7 @@ function MisMotocicletas({
   const notification = useNotification();
   const api_url = import.meta.env.VITE_API_URL;
   const { getAccessToken } = useAuth();
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Translation objects
   const translations = {
@@ -239,6 +242,14 @@ function MisMotocicletas({
     return data;
   };
 
+  const refreshData = () => {
+    setRefreshTrigger(prev => prev + 1);
+    // Call the metrics refresh callback if provided
+    if (onRefreshMetrics) {
+      onRefreshMetrics();
+    }
+  };
+
   // Component for Active Motorcycles tab
   const MotocicletasActivas = () => {
     const [activeMotos, setActiveMotos] = useState([]);
@@ -257,7 +268,7 @@ function MisMotocicletas({
         }
       };
       fetchActiveMotos();
-    }, []);
+    }, [refreshTrigger]);
 
     return (
       <TabContent>
@@ -301,7 +312,7 @@ function MisMotocicletas({
                         motorcycleData={{
                           placa: moto.matricula.matriculaGenerada,
                           propietario: `${moto.ciudadano.nombres} ${moto.ciudadano.apellidos}`,
-                          modelo: `${moto.vehiculo.marca.nombre} ${moto.vehiculo.modelo.nombre} (${moto.vehiculo.modelo.año})`,
+                          modelo: `${moto.vehiculo.marca.nombre} ${moto.vehiculo.modelo.nombre} (${moto.vehiculo.año})`,
                           chasis: moto.vehiculo.chasis,
                           fechaEmision: moto.matricula.fechaEmision,
                           registro: moto.solicitud.idSolicitud
@@ -357,7 +368,7 @@ function MisMotocicletas({
         }
       };
       fetchPendingMotos();
-    }, []);
+    }, [refreshTrigger]);
 
     return (
       <TabContent>
@@ -427,7 +438,7 @@ function MisMotocicletas({
         }
       };
       fetchRejectedMotos();
-    }, []);
+    }, [refreshTrigger]);
 
     return (
       <TabContent>
@@ -511,6 +522,7 @@ function MisMotocicletas({
         activeComponent={<MotocicletasActivas />}
         pendingComponent={<MotocicletasPendientes />}
         rejectedComponent={<MotocicletasRechazadas />}
+        onTabChange={refreshData}
       />
 
       <VerDetallesMotocicleta

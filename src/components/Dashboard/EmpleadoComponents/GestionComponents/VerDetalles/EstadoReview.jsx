@@ -9,6 +9,8 @@ import MainButton from '../../../CommonComponts/MainButton';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 // Importar el hook de notificaciones
 import { useNotification } from '../../../CommonComponts/ToastNotifications';
+import { useAuth } from '../../../../../context/AuthContext';
+import axios from 'axios';
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -35,19 +37,42 @@ const StyledForm = styled(Form)`
   }
 `;
 
-// Fix z-index issues with a styled Select component
+
+const ModalContainer = styled.div`
+  .ant-modal-wrap {
+    z-index: 1050 !important;
+  }
+  
+  .ant-modal {
+    z-index: 1050 !important;
+  }
+`;
+
 const StyledSelect = styled(Select)`
   && {
-    .rc-select-dropdown {
-      z-index: 9999 !important; // Force an extremely high z-index
+    width: 100%;
+    
+    .ant-select-dropdown {
+      z-index: 1051 !important;
     }
   }
 `;
 
-// This div will be used to properly contain the dropdown
+// Actualiza el DropdownContainer
 const DropdownContainer = styled.div`
   position: relative !important;
-  z-index: 9000 !important;
+  width: 100% !important;
+
+  .ant-select-dropdown {
+    position: fixed !important;
+    z-index: 1051 !important;
+  }
+
+  // Asegurarse que el dropdown esté sobre otros elementos
+  .estado-select-dropdown,
+  .motivo-rechazo-dropdown {
+    z-index: 1051 !important;
+  }
 `;
 
 // Update the StyledPopconfirm component to make it larger and force styles with !important
@@ -126,7 +151,7 @@ const EstadoReview = ({
 }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState(REGISTRO_STATUS.PENDIENTE);
+  const [selectedStatus, setSelectedStatus] = useState('Pendiente');
   const [pendingStatus, setPendingStatus] = useState(null);
   const [motivoRechazo, setMotivoRechazo] = useState(null);
   const { language } = useLanguage();
@@ -134,6 +159,8 @@ const EstadoReview = ({
   const { primaryColor } = usePrimaryColor();
   // Usar el hook de notificaciones
   const notification = useNotification();
+  const api_url = import.meta.env.VITE_API_URL;
+  const { getAccessToken } = useAuth();
 
   const translations = {
     en: {
@@ -142,9 +169,12 @@ const EstadoReview = ({
       approved: "Approved",
       rejected: "Rejected",
       comments: "Comments",
+      notes: "Notes",
       save: "Save Changes",
       commentsPlaceholder: "Add your comments here...",
       commentsRequired: "Please provide comments before proceeding",
+      notesPlaceholder: "Add your notes here...",
+      notesRequired: "Please provide notes before proceeding",
       statusRequired: "Please select a status",
       confirmApprove: "Are you sure you want to approve this registration?",
       confirmReject: "Are you sure you want to reject this registration?",
@@ -164,12 +194,15 @@ const EstadoReview = ({
     es: {
       status: "Estado",
       pending: "Pendiente",
-      approved: "Aprobado",
-      rejected: "Rechazado",
+      approved: "Aprobada",
+      rejected: "Rechazada",
       comments: "Comentarios",
+      notes: "Notas",
       save: "Guardar Cambios",
       commentsPlaceholder: "Agregue sus comentarios aquí...",
       commentsRequired: "Por favor proporcione comentarios antes de continuar",
+      notesPlaceholder: "Agregue sus notas aquí...",
+      notesRequired: "Por favor proporcione una nota antes de continuar",
       statusRequired: "Por favor seleccione un estado",
       confirmApprove: "¿Está seguro que desea aprobar este registro?",
       confirmReject: "¿Está seguro que desea rechazar este registro?",
@@ -191,7 +224,7 @@ const EstadoReview = ({
   const t = translations[language] || translations.es;
 
   const handleStatusChange = (value) => {
-    if (value !== REGISTRO_STATUS.PENDIENTE) {
+    if (value !== 'Pendiente') {
       setPendingStatus(value);
     } else {
       setSelectedStatus(value);
@@ -228,7 +261,7 @@ const EstadoReview = ({
   };
 
   const getConfirmTitle = () => {
-    return pendingStatus === REGISTRO_STATUS.APROBADO 
+    return pendingStatus === 'Aprobada'
       ? t.confirmApprove 
       : t.confirmReject;
   };
@@ -236,7 +269,7 @@ const EstadoReview = ({
   const handleSubmit = async () => {
     try {
       // If still pending, do nothing
-      if (selectedStatus === REGISTRO_STATUS.PENDIENTE) {
+      if (selectedStatus === 'Pendiente') {
         return;
       }
       
@@ -249,10 +282,25 @@ const EstadoReview = ({
         status: selectedStatus // Make sure we log the correct status
       });
       
+      const boyData = {
+        "idSolicitud": data.solicitud.idSolicitud,
+        "estadoDecision": values.status,
+        "notaRevision": values.notes,
+        "motivoRechazo": values.rejectionReason,
+        "detalleRechazo": values.comments
+      }
+
       switch (selectedStatus) {
-        case REGISTRO_STATUS.APROBADO:
+        case 'Aprobada':
           console.log("Procesando aprobación...");
-          
+          console.log("Body Data: ", boyData);
+          await axios.put(`${api_url}/api/solicitud/procesar`, boyData, {
+            headers: {
+              Authorization: `Bearer ${getAccessToken()}`,
+              'Content-Type': 'application/json'
+            },
+          });
+
           // Show success notification before closing modal
           notification.success(
             language === 'en' ? 'Registration Approved' : 'Registro Aprobado',
@@ -262,21 +310,18 @@ const EstadoReview = ({
           // Small pause for notification to be visible
           await new Promise(resolve => setTimeout(resolve, 500));
           
-          // Call approve handler if defined
-          if (typeof onApprove === 'function') {
-            await onApprove(values.comments);
-          } else {
-            console.warn("onApprove is not defined");
-          }
+          onApprove();
           
           break;
           
-        case REGISTRO_STATUS.RECHAZADO:
+        case 'Rechazada':
           console.log("Procesando rechazo...");
-          
-          // Include rejection reason in comments
-          const motivoTexto = getMotivoRechazoTexto(values.rejectionReason);
-          const comentarioCompleto = `${motivoTexto}: ${values.comments}`;
+          await axios.put(`${api_url}/api/solicitud/procesar`, boyData, {
+            headers: {
+              Authorization: `Bearer ${getAccessToken()}`,
+              'Content-Type': 'application/json'
+            },
+          });
           
           // Show rejection notification
           notification.info(
@@ -287,12 +332,7 @@ const EstadoReview = ({
           // Small pause for notification to be visible
           await new Promise(resolve => setTimeout(resolve, 500));
           
-          // Call reject handler if defined
-          if (typeof onReject === 'function') {
-            await onReject(comentarioCompleto);
-          } else {
-            console.warn("onReject is not defined");
-          }
+          onReject();
           
           break;
           
@@ -336,13 +376,13 @@ const EstadoReview = ({
   }, [selectedStatus]);
 
   // If not in review mode or registration is not pending, show status text
-  if (!isReviewMode || data.estado !== REGISTRO_STATUS.PENDIENTE) {
+  if (!isReviewMode || data.solicitud.estadoDecision !== 'Pendiente') {
     return (
       <div>
         <Text type="secondary">
-          {data.estado === REGISTRO_STATUS.PENDIENTE 
+          {data.solicitud.estadoDecision === 'Pendiente' 
             ? "Esta solicitud está pendiente de revisión"
-            : data.estado === REGISTRO_STATUS.APROBADO
+            : data.solicitud.estadoDecision === 'Aprobada'
             ? "Esta solicitud ha sido aprobada"
             : "Esta solicitud ha sido rechazada"
           }
@@ -358,19 +398,20 @@ const EstadoReview = ({
           <Form.Item
             name="status"
             label={t.status}
-            initialValue={REGISTRO_STATUS.PENDIENTE}
+            initialValue={'Pendiente'}
             rules={[{ required: true, message: t.statusRequired }]}
           >
             <DropdownContainer>
               <StyledSelect 
                 onChange={handleStatusChange}
-                getPopupContainer={triggerNode => triggerNode.parentElement}
-                popupClassName="estado-select-dropdown"
+                getPopupContainer={(trigger) => trigger.parentElement}
+                dropdownStyle={{ zIndex: 1051 }}
+                style={{ width: '100%' }}
                 value={selectedStatus}
               >
-                <Select.Option value={REGISTRO_STATUS.PENDIENTE}>{t.pending}</Select.Option>
-                <Select.Option value={REGISTRO_STATUS.APROBADO}>{t.approved}</Select.Option>
-                <Select.Option value={REGISTRO_STATUS.RECHAZADO}>{t.rejected}</Select.Option>
+                <Select.Option value={'Pendiente'}>{t.pending}</Select.Option>
+                <Select.Option value={'Aprobada'}>{t.approved}</Select.Option>
+                <Select.Option value={'Rechazada'}>{t.rejected}</Select.Option>
               </StyledSelect>
             </DropdownContainer>
           </Form.Item>
@@ -409,7 +450,7 @@ const EstadoReview = ({
           </div>
         )}
 
-        {selectedStatus === REGISTRO_STATUS.RECHAZADO && (
+        {selectedStatus === 'Rechazada' && (
           <Form.Item
             name="rejectionReason"
             label={t.rejectionReason}
@@ -432,27 +473,40 @@ const EstadoReview = ({
           </Form.Item>
         )}
 
-        {selectedStatus !== REGISTRO_STATUS.PENDIENTE && (
-          <Form.Item
-            name="comments"
-            label={t.comments}
-            rules={[{ required: true, message: t.commentsRequired }]}
-          >
-            <TextArea
-              rows={4}
-              placeholder={t.commentsPlaceholder}
-            />
-          </Form.Item>
+        {selectedStatus !== 'Pendiente' && (
+          <>
+            <Form.Item
+              name="comments"
+              label={t.comments}
+              rules={[{ required: true, message: t.commentsRequired }]}
+            >
+              <TextArea
+                rows={4}
+                placeholder={t.commentsPlaceholder}
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="notes"
+              label={t.notes}
+              rules={[{ required: true, message: t.notesRequired }]}
+            >
+              <TextArea
+                rows={4}
+                placeholder={t.notesPlaceholder}
+              />
+            </Form.Item>
+          </>
         )}
 
         <ButtonGroup>
           <MainButton
             htmlType="submit"
             loading={loading}
-            disabled={selectedStatus === REGISTRO_STATUS.PENDIENTE}
+            disabled={selectedStatus === 'Pendiente'}
             style={{
-              opacity: selectedStatus === REGISTRO_STATUS.PENDIENTE ? 0.5 : 1,
-              cursor: selectedStatus === REGISTRO_STATUS.PENDIENTE ? 'not-allowed' : 'pointer'
+              opacity: selectedStatus === 'Pendiente' ? 0.5 : 1,
+              cursor: selectedStatus === 'Pendiente' ? 'not-allowed' : 'pointer'
             }}
           >
             {t.save}

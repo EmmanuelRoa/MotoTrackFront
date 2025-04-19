@@ -472,24 +472,24 @@ export default function DocumentosConfirmation({ data }) {
       fileName: getFileNameFromUrl(data?.solicitud?.documentos?.licencia),
       description: t.license.description,
       fileType: getFileExtension(data?.solicitud?.documentos?.licencia),
-      iconColor: "#1890ff", // Blue
+      // Blue
       bgColor: "#1890ff",
-      iconBgColor: "#e6f7ff",
+      iconBgColor: "#e6f7ff", 
       icon: <IdcardOutlined />,
       filePath: data?.solicitud?.documentos?.licencia
     },
-    {
-      id: 2,
-      title: t.insurance.title,
-      fileName: getFileNameFromUrl(data?.solicitud?.documentos?.seguro),
-      description: t.insurance.description,
-      fileType: getFileExtension(data?.solicitud?.documentos?.seguro),
-      iconColor: "#52c41a", // Green
-      bgColor: "#52c41a",
-      iconBgColor: "#f6ffed",
-      icon: <SafetyCertificateOutlined />,
-      filePath: data?.solicitud?.documentos?.seguro
-    },
+      ...(data?.solicitud?.documentos?.seguro ? [{
+        id: 2,
+        title: t.insurance.title,
+        fileName: getFileNameFromUrl(data?.solicitud?.documentos?.seguro),
+        description: t.insurance.description,
+        fileType: getFileExtension(data?.solicitud?.documentos?.seguro),
+        iconColor: "#52c41a", // Green
+        bgColor: "#52c41a",
+        iconBgColor: "#f6ffed",
+        icon: <SafetyCertificateOutlined />,
+        filePath: data?.solicitud?.documentos?.seguro
+      }] : []),
     {
       id: 3,
       title: t.id.title,

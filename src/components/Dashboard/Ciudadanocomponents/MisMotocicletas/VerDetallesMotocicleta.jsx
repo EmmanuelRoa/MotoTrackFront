@@ -76,7 +76,7 @@ const VerDetallesMotocicleta = ({ visible, onClose, data }) => {
   
   // Get current translations
   const t = translations[language] || translations.es;
-  console.log("VerDetallesMotocicleta data:", data);
+
   // Reset active tab when the modal opens with new data
   useEffect(() => {
     if (visible) {
@@ -149,7 +149,7 @@ const VerDetallesMotocicleta = ({ visible, onClose, data }) => {
       <ModalContent>
         <TitleContainer>
           <ModalTitle level={4}>
-            {t.details} {(`${data.vehiculo.marca.nombre} ${data.vehiculo.modelo.nombre} (${data.vehiculo.modelo.año})`) || "No disponible"}
+            {t.details} {(`${data.vehiculo.marca.nombre} ${data.vehiculo.modelo.nombre} (${data.vehiculo.año})`) || "No disponible"}
           </ModalTitle>
           <StatusTag status={mapApiStatusToInternal(data.solicitud.estadoDecision) || MOTO_STATUS.PENDIENTE} />
         </TitleContainer>

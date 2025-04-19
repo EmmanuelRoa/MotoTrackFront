@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   AreaChart as RechartsArea, 
   Area, 
@@ -8,11 +8,13 @@ import {
   Tooltip,
   ResponsiveContainer 
 } from 'recharts';
-import { Radio, Space, Select } from 'antd';
+import { Radio, Space, Select, notification } from 'antd';
 import styled from 'styled-components';
 import { useLanguage } from '../../../context/LanguageContext';
 import { usePrimaryColor } from '../../../context/PrimaryColorContext';
 import { useTheme } from '../../../context/ThemeContext';
+import { useAuth } from '../../../context/AuthContext';
+import axios from 'axios';
 
 const ChartWrapper = styled.div`
   display: flex;
@@ -125,7 +127,37 @@ const AreaChart = ({ data }) => {
   const { theme } = useTheme();
   const [timePeriod, setTimePeriod] = useState('year');
   const [selectedYear, setSelectedYear] = useState(2025); // Default to current year
-  
+  const api_url = import.meta.env.VITE_API_URL;
+  const { getAccessToken } = useAuth();
+  const [dataSolcitud, setDataSolicitud] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async (period = 'año') => {
+      try {
+        const response = await axios.get(`${api_url}/api/statistics/empleado?periodo=${period}`, {
+          headers: {
+            Authorization: `Bearer ${getAccessToken()}`
+          }
+        });
+        if (response.data.success) {
+          // Assuming response.data.data is the data you want to use
+          setDataSolicitud(response.data.data.tendencias);
+          console.log('Data fetched successfully:', response.data.data.tendencias);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        notification.error({
+          message: language === 'es' ? 'Error' : 'Error',
+          description: language === 'es' 
+            ? 'Error al cargar los datos de solicitudes' 
+            : 'Error loading request data',
+        });
+      }
+    };
+    fetchData();
+  }, []);
+
+
   const currentYear = 2025; // Since user mentioned 2025 is current year
   
   // Generate available years (current year -3 to current year +1)

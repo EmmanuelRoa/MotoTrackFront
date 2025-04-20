@@ -6,7 +6,7 @@ import SecondaryButton from '../../../CommonComponts/SecondaryButton';
 import { useNotification } from '../../../CommonComponts/ToastNotifications';
 import styled from 'styled-components';
 import { Typography, Form, Spin, Upload, message } from 'antd';
-import { LoadingOutlined, PlusOutlined } from '@ant-design/icons';
+import { LoadingOutlined, PlusOutlined, UserOutlined } from '@ant-design/icons';
 import { useTheme } from '../../../../../context/ThemeContext';
 import { useAuth } from '../../../../../context/AuthContext';
 import { useLanguage } from '../../../../../context/LanguageContext';
@@ -316,12 +316,24 @@ const EditarMiPerfil = ({ show, onClose }) => {
   // Upload button content
   const uploadButton = (
     <>
-      {loading ? <LoadingOutlined /> : 
-        <AvatarInitials theme={theme}>
-          {currentUser?.firstName?.charAt(0) || ''}
-          {currentUser?.lastName?.charAt(0) || ''}
-        </AvatarInitials>
-      }
+      {loading ? (
+        <LoadingOutlined />
+      ) : (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          width: '100%',
+          height: '100%'
+        }}>
+          <UserOutlined 
+            style={{ 
+              fontSize: '32px',
+              color: theme.token.colorTextSecondary
+            }} 
+          />
+        </div>
+      )}
     </>
   );
   

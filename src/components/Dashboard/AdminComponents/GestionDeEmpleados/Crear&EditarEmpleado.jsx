@@ -481,8 +481,6 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
     }
 
     if (isEditing) {
-      console.log('Editing employee:', formattedData);
-
       // Determinar los campos cambiados para usuario y persona
       const changedFields = {};
       ['nombres', 'apellidos', 'correo', 'estado', 'idTipoUsuario'].forEach((field) => {
@@ -532,9 +530,7 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
           ...changedFields, // Solo los campos que cambiaron
           datosPersonales: Object.keys(changedPersonaFields).length > 0 ? changedPersonaFields : undefined, // Solo si hay cambios en datosPersonales
         };
-      
-        // Verificar si el objeto es serializable
-        console.log('Request Body:', requestBody);
+
         JSON.stringify(requestBody); // Esto lanzará un error si hay referencias circulares
       
 
@@ -559,8 +555,6 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
         );
       }
     } else {
-      console.log('Creating employee:', formattedData);
-
       try {
         const response = await axios.post(`${api_url}/api/user`, {
           nombres: formattedData.nombres,
@@ -585,8 +579,6 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
         });
 
         if (response.data.success) {
-          // Si la creación es exitosa, puedes manejar la respuesta aquí
-          console.log('User created successfully:', response.data.data);
           notification.success(
             texts.userCreated,
             `${texts.userCreatedDesc} (${formattedData.nombres} ${formattedData.apellidos})`
@@ -609,10 +601,6 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
       }
     }
   };
-
-  console.log('Selected province:', empleadoData);
-  // Agregar este console.log para depuración
-  console.log('Form instance:', form); 
 
   // Función para alternar visibilidad de contraseñas
   const togglePasswordVisibility = (field) => {
@@ -967,7 +955,6 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
                       
                       // Código existente para el manejo de errores
                       const errorFields = info.errorFields;
-                      console.log('Validation failed with fields:', errorFields);
                       
                       // Scroll al primer campo con error
                       const firstErrorField = errorFields[0]?.name[0];

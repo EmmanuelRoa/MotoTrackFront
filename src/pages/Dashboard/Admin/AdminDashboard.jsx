@@ -46,7 +46,7 @@ function AdminDashboard() {
       <Row gutter={[16, 24]} className="dashboard-row">
         <Col xs={24} sm={24} md={24} lg={24} xl={24}>
           <SectionContainer style={{ height: '450px' }}>
-            <AreaChart />
+            <AreaChart isAdmin={true}/>
           </SectionContainer>
         </Col>
       </Row>
@@ -55,17 +55,17 @@ function AdminDashboard() {
       <Row gutter={[16, 24]} className="dashboard-row">
         <Col xs={24} sm={24} md={8} lg={8} xl={8}>
           <SectionContainer>
-            <DistribucionPorMarca />
+            <DistribucionPorMarca isAdmin={true} />
           </SectionContainer>
         </Col>
         <Col xs={24} sm={24} md={8} lg={8} xl={8}>
           <SectionContainer>
-            <DistribucionPorTipo />
+            <DistribucionPorTipo isAdmin={true}/>
           </SectionContainer>
         </Col>
         <Col xs={24} sm={24} md={8} lg={8} xl={8}>
           <SectionContainer>
-            <DistribucionPorZona />
+            <DistribucionPorZona isAdmin={true} />
           </SectionContainer>
         </Col>
       </Row>

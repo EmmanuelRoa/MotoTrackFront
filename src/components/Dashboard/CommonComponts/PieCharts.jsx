@@ -13,6 +13,7 @@ import { usePrimaryColor } from '../../../context/PrimaryColorContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import axios from 'axios';
+import { Spin } from 'antd';
 
 // Register ECharts components
 echarts.use([
@@ -91,7 +92,15 @@ const LegendPercentage = styled.div`
   margin-left: 0.3rem;
 `;
 
-const PieChartComponent = ({ title, data, height = 250 }) => {
+const SpinContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+`;
+
+const PieChartComponent = ({ title, data, height = 250, loading = false }) => {
   const chartRef = useRef(null);
   const { theme } = useTheme();
   const { primaryColor } = usePrimaryColor();
@@ -209,29 +218,37 @@ const PieChartComponent = ({ title, data, height = 250 }) => {
       <Title>{title}</Title>
       <ChartContainer>
         <ChartContent>
-          <ChartDiv ref={chartRef} style={{ height }} />
-          <BottomSection>
-            <LegendContainer>
-              {chartData.length > 0 ? (
-                chartData.map((item, index) => (
-                  <LegendItem key={index}>
-                    <LegendColor color={item.color} />
-                    <LegendText>{item.name}</LegendText>
-                    <LegendPercentage>{item.percentage}</LegendPercentage>
-                  </LegendItem>
-                ))
-              ) : (
-                <LegendText>{t.noData}</LegendText>
-              )}
-            </LegendContainer>
-          </BottomSection>
+          {loading ? (
+            <SpinContainer>
+              <Spin size="large" />
+            </SpinContainer>
+          ) : (
+            <>
+              <ChartDiv ref={chartRef} style={{ height }} />
+              <BottomSection>
+                <LegendContainer>
+                  {chartData.length > 0 ? (
+                    chartData.map((item, index) => (
+                      <LegendItem key={index}>
+                        <LegendColor color={item.color} />
+                        <LegendText>{item.name}</LegendText>
+                        <LegendPercentage>{item.percentage}</LegendPercentage>
+                      </LegendItem>
+                    ))
+                  ) : (
+                    <LegendText>{t.noData}</LegendText>
+                  )}
+                </LegendContainer>
+              </BottomSection>
+            </>
+          )}
         </ChartContent>
       </ChartContainer>
     </div>
   );
 };
 
-export const DistribucionPorMarca = () => {
+export const DistribucionPorMarca = ({ isAdmin = false }) => {
   const { language } = useLanguage();
   const api_url = import.meta.env.VITE_API_URL;
   const { getAccessToken } = useAuth();
@@ -242,7 +259,13 @@ export const DistribucionPorMarca = () => {
     const fetchBrands = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${api_url}/api/statistics/empleado`, {
+        let urlRequest = `${api_url}/api/statistics`;
+        if(isAdmin) {
+          urlRequest += '/dashboard?vista=distribucion';
+        } else {
+          urlRequest += '/empleado';
+        }
+        const response = await axios.get(urlRequest, {
           headers: {
             Authorization: `Bearer ${getAccessToken()}`
           }
@@ -308,13 +331,18 @@ export const DistribucionPorMarca = () => {
     <PieChartComponent 
       title={t.title}
       data={chartData}
+      loading={loading}
     />
   );
 };
 
-export const DistribucionPorTipo = () => {
+export const DistribucionPorTipo = ({ isAdmin = false }) => {
   const { language } = useLanguage();
-  
+  const api_url = import.meta.env.VITE_API_URL;
+  const { getAccessToken } = useAuth();
+  const [types, setTypes] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
+
   const translations = {
     es: {
       title: 'Distribución por Tipo',
@@ -334,20 +362,66 @@ export const DistribucionPorTipo = () => {
 
   const t = translations[language] || translations.es;
 
+  useEffect(() => {
+    const fetchType = async () => {
+      try {
+        setLoading(true);
+        let urlRequest = `${api_url}/api/statistics`;
+        if(isAdmin) {
+          urlRequest += '/dashboard?vista=distribucion';
+        } else {
+          urlRequest += '/empleado';
+        }
+        const response = await axios.get(urlRequest, {
+          headers: {
+            Authorization: `Bearer ${getAccessToken()}`
+          }
+        });
+
+        if (response.data.success) {
+          setTypes(response.data.data.distribucion.tipo);
+        }
+      } catch (error) {
+        console.error('Error fetching zones:', error);
+        notification.error({
+          message: language === 'es' ? 'Error' : 'Error',
+          description: language === 'es' 
+            ? 'Error al cargar las zonas' 
+            : 'Error loading zonas',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchType();
+  }, []); 
+
+  const chartData = types.map((type, index) => {
+    const colors = [
+      '#1890ff', '#fa8c16', '#52c41a', '#722ed1', '#f5222d', 
+      '#13c2c2', '#eb2f96', '#faad14', '#a0d911', '#2f54eb',
+      '#fa541c', '#9254de', '#36cfc9', '#bae637', '#40a9ff',
+      '#ffa940', '#73d13d', '#597ef7', '#ff4d4f', '#95de64'
+    ];
+    return {
+      name: type.tipo,
+      value: type.cantidad,
+      percentage: type.porcentaje,
+      color: colors[index % colors.length]
+    }
+  });
+
   return (
     <PieChartComponent 
       title={t.title}
-      data={[
-        { name: t.motorcycle, value: 56, percentage: '56%', color: '#1890ff' },
-        { name: t.scooter, value: 25, percentage: '25%', color: '#fa8c16' },
-        { name: t.moped, value: 13, percentage: '13%', color: '#52c41a' },
-        { name: t.others, value: 6, percentage: '6%', color: '#722ed1' }
-      ]}
+      data={chartData}
+      loading={loading}
     />
   );
 };
 
-export const DistribucionPorZona = () => {
+export const DistribucionPorZona = ({ isAdmin = false }) => {
   const { language } = useLanguage();
   const api_url = import.meta.env.VITE_API_URL;
   const { getAccessToken } = useAuth();
@@ -358,7 +432,13 @@ export const DistribucionPorZona = () => {
     const fetchZone = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${api_url}/api/statistics/empleado`, {
+        let urlRequest = `${api_url}/api/statistics`;
+        if(isAdmin) {
+          urlRequest += '/dashboard?vista=distribucion';
+        } else {
+          urlRequest += '/empleado';
+        }
+        const response = await axios.get(urlRequest, {
           headers: {
             Authorization: `Bearer ${getAccessToken()}`
           }
@@ -424,6 +504,7 @@ export const DistribucionPorZona = () => {
     <PieChartComponent 
       title={t.title}
       data={chartData}
+      loading={loading}
     />
   );
 };

@@ -86,8 +86,6 @@ const VerDetallesMotocicleta = ({ visible, onClose, data }) => {
   
   // Handle download card for approved motorcycles
   const handleDownloadCard = () => {
-    console.log(`${t.downloading} ${data?.id}`);
-    // Implementation for downloading the card
   };
   
   // Handle edit request for rejected motorcycles

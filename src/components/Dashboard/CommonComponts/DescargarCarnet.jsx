@@ -113,7 +113,6 @@ const DescargarCarnet = ({
       const plateText = motorcycleData.placa ?? 'N/A'; // Valor predeterminado
       doc.setFontSize(90);
       doc.text(plateText, 105, 70, { align: 'center' });
-  
       // Add owner information
       const propietario = motorcycleData.propietario ?? 'Propietario no especificado';
       const modelo = motorcycleData.modelo ?? 'Modelo no especificado';

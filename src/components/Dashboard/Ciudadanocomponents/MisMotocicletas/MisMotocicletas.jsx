@@ -161,7 +161,6 @@ function MisMotocicletas({
         },
         params: { estado },
       });
-      // console.log('Fetched solicitudes:', response.data);
       return response.data.data;
     } catch (error) {
       console.error('Error fetching solicitudes:', error);
@@ -210,28 +209,6 @@ function MisMotocicletas({
     if (!isPreview) {
       navigate('/panel/ciudadano/motocicletas', { replace: true });
     }
-  };
-
-  const handleDownloadCard = (id) => {
-    console.log('selected moto: ', selectedMoto);
-    // Find the motorcycle data by id
-    const moto = findMotoById(id);
-    if (!moto) return;
-    
-    // Prepare data for the carnet
-    const carnetData = {
-      placa: selectedMoto.matriculagenerada,
-      propietario: 'Propietario no especificado',
-      modelo: `${selectedMoto.marcanombre || ''} ${selectedMoto.modelonombre || ''} ${'('+ selectedMoto.año + ')' || ''}`,
-      chasis: selectedMoto.chasis || 'No especificado',
-      fechaEmision: selectedMoto.fechaemisionmatricula,
-      registro: moto.id || 'N/A'
-    };
-    
-    // This will be handled by the DescargarCarnet component
-    console.log(`Preparing to download card for: ${moto.modelo} (${moto.id})`);
-    
-    return carnetData;
   };
 
   // Filter data if in preview mode
@@ -312,7 +289,7 @@ function MisMotocicletas({
                         motorcycleData={{
                           placa: moto.matricula.matriculaGenerada,
                           propietario: `${moto.ciudadano.nombres} ${moto.ciudadano.apellidos}`,
-                          modelo: `${moto.vehiculo.marca.nombre} ${moto.vehiculo.modelo.nombre} (${moto.vehiculo.año})`,
+                          modelo: `${moto.vehiculo.marca.nombre} ${moto.vehiculo.modelo.nombre}`,
                           chasis: moto.vehiculo.chasis,
                           fechaEmision: moto.matricula.fechaEmision,
                           registro: moto.solicitud.idSolicitud

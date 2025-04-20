@@ -48,7 +48,6 @@ const GestionFilter = ({
 
   const handleApply = () => {
     const values = form.getFieldsValue();
-    console.log(values);
     onApplyFilters(values);
   };
 

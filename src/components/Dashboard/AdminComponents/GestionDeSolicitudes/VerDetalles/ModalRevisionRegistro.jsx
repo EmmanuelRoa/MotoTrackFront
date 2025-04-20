@@ -80,22 +80,21 @@ const ModalRevisionRegistro = ({
   }, [visible, data?.id]);
 
   const datosPersonalesContent = data ? (
-    <DatosPersonalesConfirmation userData={data.datosPersonales} />
+    <DatosPersonalesConfirmation userData={data.ciudadano} />
   ) : null;
 
   const datosMotocicletaContent = data ? (
-    <DatosMotocicletasConfirmation motoData={data.datosMotocicleta} />
+    <DatosMotocicletasConfirmation motoData={data} />
   ) : null;
 
   // Ensure we're passing the correct props to the DocumentosConfirmationParaVerDetalles component
   const documentosContent = data ? (
-    <DocumentosConfirmationParaVerDetalles documentosData={data.documentos} />
+    <DocumentosConfirmationParaVerDetalles data={data} />
   ) : null;
 
   const handleStatusUpdate = async (status, comments) => {
     try {
       setProcessingStatus(true);
-      console.log('Updating status:', { status, comments, id: data.id });
       
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 800));
@@ -129,7 +128,6 @@ const ModalRevisionRegistro = ({
     
     if (isReviewMode && data.estado === REGISTRO_STATUS.PENDIENTE) {
       // Show review form when in review mode and status is pending
-      console.log("Showing review form for pending status");
       return (
         <EstadoReview 
           data={data}

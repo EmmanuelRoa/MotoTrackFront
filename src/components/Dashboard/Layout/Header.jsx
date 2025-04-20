@@ -258,8 +258,8 @@ const Header = ({ collapsed }) => {
       </HeaderLeft>
       
       <HeaderRight>
-        <Dropdown
-          dropdownRender={() => null /* menú de notificaciones si se desea */}
+        {/* <Dropdown
+          dropdownRender={() => null 
           placement="bottomRight"
           trigger={['click']}
         >
@@ -270,7 +270,7 @@ const Header = ({ collapsed }) => {
           </NotificationContainer>
         </Dropdown>
         
-        <StyledDivider type="vertical" />
+        <StyledDivider type="vertical" /> */}
         
         <Dropdown
           dropdownRender={() => userMenu}

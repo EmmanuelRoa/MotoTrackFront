@@ -80,40 +80,40 @@ const DatosMotocicletasConfirmation = ({ motoData }) => {
       <DataRow gutter={[16, 0]}>
         <Col xs={24} sm={12}>
           <DataLabel>{t.brand}</DataLabel>
-          <DataValue>{motoData.vehiculo.marca.nombre || "No disponible"}</DataValue>
+          <DataValue>{motoData?.vehiculo?.marca?.nombre || "No disponible"}</DataValue>
         </Col>
         <Col xs={24} sm={12}>
           <DataLabel>{t.model}</DataLabel>
-          <DataValue>{motoData.vehiculo.modelo.nombre || "No disponible"}</DataValue>
+          <DataValue>{motoData?.vehiculo?.modelo?.nombre || "No disponible"}</DataValue>
         </Col>
       </DataRow>
       
       <DataRow gutter={[16, 0]}>
         <Col xs={24} sm={12}>
           <DataLabel>{t.year}</DataLabel>
-          <DataValue>{motoData.vehiculo.año || "No disponible"}</DataValue>
+          <DataValue>{motoData?.vehiculo?.año || "No disponible"}</DataValue>
         </Col>
         <Col xs={24} sm={12}>
           <DataLabel>{t.color}</DataLabel>
-          <DataValue>{motoData.vehiculo.color || "No disponible"}</DataValue>
+          <DataValue>{motoData?.vehiculo?.color || "No disponible"}</DataValue>
         </Col>
       </DataRow>
       
       <DataRow gutter={[16, 0]}>
         <Col xs={24} sm={12}>
           <DataLabel>{t.engineSize}</DataLabel>
-          <DataValue>{motoData.vehiculo.cilindraje || "No disponible"}</DataValue>
+          <DataValue>{motoData?.vehiculo?.cilindraje || "No disponible"}</DataValue>
         </Col>
         <Col xs={24} sm={12}>
           <DataLabel>{t.useType}</DataLabel>
-          <DataValue>{motoData.vehiculo.tipoUso || "No disponible"}</DataValue>
+          <DataValue>{motoData?.vehiculo?.tipoUso || "No disponible"}</DataValue>
         </Col>
       </DataRow>
       
       <DataRow gutter={[16, 0]}>
         <Col xs={24} sm={12}>
           <DataLabel>{t.chassisNumber}</DataLabel>
-          <DataValue>{motoData.vehiculo.chasis || "No disponible"}</DataValue>
+          <DataValue>{motoData?.vehiculo?.chasis || "No disponible"}</DataValue>
         </Col>
       </DataRow>
       

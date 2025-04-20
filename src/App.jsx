@@ -31,7 +31,6 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   if (!isAuthenticated) {
-    console.log('User is not authenticated, redirecting to login...');
     return <Navigate to="/login" replace />;
   }
   
@@ -67,7 +66,7 @@ const PublicRoutes = () => {
   return (
     <Routes>
       {/* Public routes - always have white background */}
-      <Route path="/" element={<Login />} />
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       

@@ -73,7 +73,7 @@ export const exportTableToPdf = async ({
       RECHAZADO: 'Rechazado'
     }
   };
-  console.log('data:', data);
+  
   // Force Spanish translations
   const t = translations.es;
   
@@ -105,13 +105,12 @@ export const exportTableToPdf = async ({
     if (transformData) {
       processedData = transformData(processedData);
     }
-
+    
     // Map columns to format expected by jspdf-autotable
     const tableColumns = columns
     .filter(col => col.key !== 'actions' && col.dataIndex !== 'actions' && col.key !== 'acciones') // Don't include action columns
     .map(col => {
       let dataKey;
-
       // Asignar dataKey según el título de la columna
       if (col.title === 'Nombre') {
         dataKey = 'nombres';
@@ -131,7 +130,9 @@ export const exportTableToPdf = async ({
         dataKey = 'fechaSolicitud';
       } else if (col.title === 'Estado') {
         dataKey = 'estado';
-      }else {
+      } else if (col.title === 'Asignado a') {
+        dataKey = 'empleado';
+      } else {
         // Usar dataIndex o key como fallback
         dataKey = Array.isArray(col.dataIndex) ? col.dataIndex.join('.') : col.dataIndex || col.key;
       }
@@ -145,7 +146,7 @@ export const exportTableToPdf = async ({
     // Map data to format expected by jspdf-autotable
     const tableData = processedData.map(record => {
       // Check if the record is in flat format
-      if (isFlatFormat(record)) {
+      if (isFlatFormat(record)) {        
         // Handle flat format directly
         return {
           id: record.id,
@@ -155,7 +156,8 @@ export const exportTableToPdf = async ({
           modelo: record.modelo,
           chasis: record.chasis,
           estado: t[record.estado] || record.estado,
-          fechaDecision: record.fechaDecision
+          fechaDecision: record.fechaDecision,
+          empleado: record.empleado || ''
         };
       } else {
         // Handle nested format

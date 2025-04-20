@@ -406,7 +406,6 @@ function GestionTable({ empleadosData = [], onView, onEdit, onDelete, onActivate
       key: 'tipoUsuario',
       render: (_, typeUser) => {
         let roleText;
-        console.log(typeUser.tipoUsuario.nombre);
         if (typeUser?.tipoUsuario?.nombre === EMPLEADO_ROL.ADMIN) {
           roleText = t.admin;
         } else if (typeUser?.tipoUsuario?.nombre === EMPLEADO_ROL.EMPLEADO) {

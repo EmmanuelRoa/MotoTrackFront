@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import { Tag, Tooltip } from "antd";
+import { Tag, Tooltip, Spin } from "antd";
 import { motion } from "framer-motion";
 import { 
   UserOutlined, 
@@ -251,6 +251,14 @@ const ButtonContainer = styled.div`
   margin-top: 1rem;
 `;
 
+// Add new styled component for the spinner container
+const SpinnerContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+`;
+
 const DocumentCard = ({ 
   title, 
   fileName, 
@@ -266,6 +274,7 @@ const DocumentCard = ({
   const { primaryColor } = usePrimaryColor(); // Add this line to get primaryColor
   const isDarkMode = currentTheme === 'themeDark';
   const [previewVisible, setPreviewVisible] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
   
   // Determine icon based on fileType
   const getFileIcon = () => {
@@ -280,6 +289,10 @@ const DocumentCard = ({
 
   const handleClose = () => {
     setPreviewVisible(false);
+  };
+
+  const handleImageLoad = () => {
+    setImageLoading(false);
   };
 
   return (
@@ -350,7 +363,19 @@ const DocumentCard = ({
           </PreviewTitle>
           
           {fileType && (fileType.toUpperCase() === "JPG" || fileType.toUpperCase() === "PNG" || fileType.toUpperCase() === "JPEG") ? (
-            <PreviewImage src={filePath} alt={fileName} />
+            <>
+              {imageLoading && (
+                <SpinnerContainer>
+                  <Spin size="large" />
+                </SpinnerContainer>
+              )}
+              <PreviewImage 
+                src={filePath} 
+                alt={fileName}
+                onLoad={handleImageLoad}
+                style={{ display: imageLoading ? 'none' : 'block' }}
+              />
+            </>
           ) : (
             fileType && fileType.toUpperCase() === "PDF" ? (
               <>

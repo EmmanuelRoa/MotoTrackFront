@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; // Importa useNavigate
 import styled, { createGlobalStyle } from 'styled-components';
-import { Typography, Checkbox } from 'antd';
-import { motion } from 'framer-motion'; // Import framer-motion
+import { Typography, Checkbox, Spin, notification } from 'antd'; // Importa notification
+import { motion } from 'framer-motion';
 import SideImage from '../../components/Auth/SideImage';
 import Input from '../../components/Auth/Input';
 import Button from '../../components/Auth/Button';
 import MotoTrackLogo from '../../assets/Lading/MotoTrackLogo-2.png';
+import axios from 'axios';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -388,6 +389,10 @@ function Register() {
     agreeToTerms: ''
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false); // Estado para el spinner
+  const apiUrl = import.meta.env.VITE_API_URL;
+  const navigate = useNavigate(); // Hook para redirigir
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prevState => ({
@@ -436,15 +441,19 @@ function Register() {
     if (!formData.password) {
       newErrors.password = 'La contraseña es requerida';
       valid = false;
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'La contraseña debe tener al menos 8 caracteres';
+      valid = false;
+    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/.test(formData.password)) {
+      newErrors.password = 'La contraseña debe tener al menos una mayúscula, una minúscula y un número';
       valid = false;
     }
     
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = 'Confirmar la contraseña es requerido';
       valid = false;
-    } else if (formData.password !== formData.confirmPassword) {
+    }
+    if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Las contraseñas no coinciden';
       valid = false;
     }
@@ -458,12 +467,40 @@ function Register() {
     return valid;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (validateForm()) {
-      // Handle registration logic here
-      console.log('Registration attempt with:', formData);
+      setIsSubmitting(true); // Mostrar spinner
+            try {
+        const response = await axios.post(`${apiUrl}/api/register`, {
+          nombres: formData.firstName,
+          apellidos: formData.lastName,
+          correo: formData.email,
+          contrasena: formData.password,
+        }, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        // Mostrar notificación de éxito
+        notification.success({
+          message: 'Registro exitoso',
+          description: 'El usuario se ha creado exitosamente.',
+        });
+
+        // Redirigir al login
+        navigate('/login');
+      } catch (error) {
+        console.error('Error during registration:', error);
+        setErrors(prevErrors => ({
+          ...prevErrors,
+          email: error?.response?.data?.message || 'Error al registrar, intenta de nuevo.'
+        }));
+      } finally {
+        setIsSubmitting(false); // Ocultar spinner
+      }
     }
   };
 
@@ -472,174 +509,180 @@ function Register() {
   };
 
   return (
-    <PageContainer
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-    >
-      <GlobalStyles />
-      
-      <SideImageContainer
-        variants={sideImageVariants}
+    <Spin spinning={isSubmitting} tip="Cargando"> {/* Spinner envuelve todo el contenido */}
+      <PageContainer
+        variants={pageVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
       >
-        <SideImage type="register" />
-      </SideImageContainer>
-      
-      <FormContainer
-        variants={itemVariants}
-      >
-        <MobileHeader>
-          <BackButton onClick={navigateToHome}>Inicio</BackButton>
-        </MobileHeader>
+        <GlobalStyles />
         
-        <LogoContainer>
-          <Logo 
-            src={MotoTrackLogo} 
-            alt="MotoTrack Logo" 
-            variants={logoVariants}
-            initial="initial"
-            animate="animate"
-          />
-          <StyledTitle 
-            level={1}
-            variants={itemVariants}
-          >
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ 
-                opacity: 1,
-                transition: { delay: 0.15, duration: 0.2 } 
-              }}
-            >
-              Crear Cuenta
-            </motion.span>
-          </StyledTitle>
-        </LogoContainer>
+        <SideImageContainer
+          variants={sideImageVariants}
+        >
+          <SideImage type="register" />
+        </SideImageContainer>
         
-        <RegisterForm 
-          onSubmit={handleSubmit}
+        <FormContainer
           variants={itemVariants}
         >
-          <motion.div variants={itemVariants} style={{ width: '100%' }}>
-            <InputGroup>
-              <InputRow variants={inputRowVariants}>
-                <motion.div style={{ flex: 1 }} variants={inputRowVariants}>
-                  <LargerInput 
-                    title="Nombre"
-                    placeholder="Ilia"
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                  />
-                  {errors.firstName && <ErrorMessage type="danger">{errors.firstName}</ErrorMessage>}
-                </motion.div>
-                
-                <motion.div style={{ flex: 1 }} variants={inputRowVariants}>
-                  <LargerInput 
-                    title="Apellido"
-                    placeholder="Topuria"
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                  />
-                  {errors.lastName && <ErrorMessage type="danger">{errors.lastName}</ErrorMessage>}
-                </motion.div>
-              </InputRow>
-            </InputGroup>
-          </motion.div>
+          <MobileHeader>
+            <BackButton onClick={navigateToHome}>Inicio</BackButton>
+          </MobileHeader>
           
-          <motion.div variants={itemVariants} style={{ width: '100%' }}>
-            <InputGroup>
-              <LargerInput 
-                title="Email"
-                placeholder="IliaOwnsVolk@gmail.com"
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-              />
-              {errors.email && <ErrorMessage type="danger">{errors.email}</ErrorMessage>}
-            </InputGroup>
-          </motion.div>
-          
-          <motion.div variants={itemVariants} style={{ width: '100%' }}>
-            <InputGroup>
-              <InputRow>
-                <div style={{ flex: 1 }}>
-                  <LargerInput 
-                    title="Contraseña"
-                    placeholder="********"
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                  />
-                  {errors.password && <ErrorMessage type="danger">{errors.password}</ErrorMessage>}
-                </div>
-                
-                <div style={{ flex: 1 }}>
-                  <LargerInput 
-                    title="Confirmar Contraseña"
-                    placeholder="********"
-                    type="password"
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                  />
-                  {errors.confirmPassword && <ErrorMessage type="danger">{errors.confirmPassword}</ErrorMessage>}
-                </div>
-              </InputRow>
-            </InputGroup>
-          </motion.div>
-          
-          <motion.div variants={itemVariants} style={{ width: '100%' }}>
-            <CheckboxContainer>
-              <StyledCheckbox 
-                name="agreeToTerms" 
-                checked={formData.agreeToTerms}
-                onChange={handleChange}
+          <LogoContainer>
+            <Logo 
+              src={MotoTrackLogo} 
+              alt="MotoTrack Logo" 
+              variants={logoVariants}
+              initial="initial"
+              animate="animate"
+            />
+            <StyledTitle 
+              level={1}
+              variants={itemVariants}
+            >
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ 
+                  opacity: 1,
+                  transition: { delay: 0.15, duration: 0.2 } 
+                }}
               >
-                Acepto los Términos y Condiciones
-              </StyledCheckbox>
-            </CheckboxContainer>
-            {errors.agreeToTerms && <ErrorMessage type="danger">{errors.agreeToTerms}</ErrorMessage>}
-          </motion.div>
+                Crear Cuenta
+              </motion.span>
+            </StyledTitle>
+          </LogoContainer>
           
-          <motion.div 
-            style={{ width: '100%' }}
-         
-            whileHover="hover"
-            whileTap="tap"
-          >
-            <ButtonContainer>
-              <FullWidthButton size="large" htmlType="submit">
-                Registrarse
-              </FullWidthButton>
-            </ButtonContainer>
-          </motion.div>
-          
-          <motion.div 
+          <RegisterForm 
+            onSubmit={handleSubmit}
             variants={itemVariants}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ 
-              opacity: 1, 
-              y: 0,
-              transition: { 
-                delay: 0.25, 
-                duration: 0.2 
-              }
-            }}
           >
-            <StyledParagraph>
-              ¿Ya tienes una cuenta? <StyledLink to="/login">Inicia sesión</StyledLink>
-            </StyledParagraph>
-          </motion.div>
-        </RegisterForm>
-      </FormContainer>
-    </PageContainer>
+            {/* Form inputs */}
+            <motion.div variants={itemVariants} style={{ width: '100%' }}>
+              <InputGroup>
+                <InputRow variants={inputRowVariants}>
+                  <motion.div style={{ flex: 1 }} variants={inputRowVariants}>
+                    <LargerInput 
+                      title="Nombre"
+                      placeholder="Ilia"
+                      type="text"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                    />
+                    {errors.firstName && <ErrorMessage type="danger">{errors.firstName}</ErrorMessage>}
+                  </motion.div>
+                  
+                  <motion.div style={{ flex: 1 }} variants={inputRowVariants}>
+                    <LargerInput 
+                      title="Apellido"
+                      placeholder="Topuria"
+                      type="text"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                    />
+                    {errors.lastName && <ErrorMessage type="danger">{errors.lastName}</ErrorMessage>}
+                  </motion.div>
+                </InputRow>
+              </InputGroup>
+            </motion.div>
+            
+            <motion.div variants={itemVariants} style={{ width: '100%' }}>
+              <InputGroup>
+                <LargerInput 
+                  title="Email"
+                  placeholder="IliaOwnsVolk@gmail.com"
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                />
+                {errors.email && <ErrorMessage type="danger">{errors.email}</ErrorMessage>}
+              </InputGroup>
+            </motion.div>
+            
+            <motion.div variants={itemVariants} style={{ width: '100%' }}>
+              <InputGroup>
+                <InputRow>
+                  <div style={{ flex: 1 }}>
+                    <LargerInput 
+                      title="Contraseña"
+                      placeholder="********"
+                      type="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                    />
+                    {errors.password && <ErrorMessage type="danger">{errors.password}</ErrorMessage>}
+                  </div>
+                  
+                  <div style={{ flex: 1 }}>
+                    <LargerInput 
+                      title="Confirmar Contraseña"
+                      placeholder="********"
+                      type="password"
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                    />
+                    {errors.confirmPassword && <ErrorMessage type="danger">{errors.confirmPassword}</ErrorMessage>}
+                  </div>
+                </InputRow>
+              </InputGroup>
+            </motion.div>
+            
+            <motion.div variants={itemVariants} style={{ width: '100%' }}>
+              <CheckboxContainer>
+                <StyledCheckbox 
+                  name="agreeToTerms" 
+                  checked={formData.agreeToTerms}
+                  onChange={handleChange}
+                >
+                  Acepto los Términos y Condiciones
+                </StyledCheckbox>
+              </CheckboxContainer>
+              {errors.agreeToTerms && <ErrorMessage type="danger">{errors.agreeToTerms}</ErrorMessage>}
+            </motion.div>
+            
+            <motion.div 
+              style={{ width: '100%' }}
+              whileHover="hover"
+              whileTap="tap"
+            >
+              <ButtonContainer>
+                <FullWidthButton 
+                  size="large" 
+                  htmlType="submit" 
+                  disabled={isSubmitting} // Deshabilitar botón mientras se envía
+                >
+                  Registrarse
+                </FullWidthButton>
+              </ButtonContainer>
+            </motion.div>
+            
+            <motion.div 
+              variants={itemVariants}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ 
+                opacity: 1, 
+                y: 0,
+                transition: { 
+                  delay: 0.25, 
+                  duration: 0.2 
+                }
+              }}
+            >
+              <StyledParagraph>
+                ¿Ya tienes una cuenta? <StyledLink to="/login">Inicia sesión</StyledLink>
+              </StyledParagraph>
+            </motion.div>
+          </RegisterForm>
+        </FormContainer>
+      </PageContainer>
+    </Spin>
   );
 }
 

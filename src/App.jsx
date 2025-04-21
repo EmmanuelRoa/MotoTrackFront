@@ -18,18 +18,25 @@ import CiudadanoDashboardPage from './pages/Dashboard/Ciudadano/CiudadanoDashboa
 import RegistrarPage from './pages/Dashboard/Ciudadano/RegistrarPage';
 import MotocicletasPage from './pages/Dashboard/Ciudadano/MotocicletasPage';
 import LandingPage from './pages/LandingPage/LandingPage';
+import LoadingOverlay from './components/Dashboard/CommonComponts/loadingOverlay';
 
 // Updated ProtectedRoute component that uses the auth context
 const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { currentUser, isAuthenticated } = useAuth();
-  
+  const { currentUser, isAuthenticated, loading } = useAuth();
+
+   // Add a check for loading state
+   if (loading) {
+    // Return a loading indicator or null while checking authentication
+    return <LoadingOverlay isLoading={loading} text="Cargando página..."/>
+  }
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
   
   if (!allowedRoles.includes(currentUser.role)) {
     // Redirect based on role
-    if (currentUser.role === 'admin') {
+    if (currentUser.role === 'administrador') {
       return <Navigate to="/panel/admin" replace />;
     } else if (currentUser.role === 'empleado') {
       return <Navigate to="/panel/empleado" replace />;
@@ -67,7 +74,7 @@ const PublicRoutes = () => {
       <Route 
         path="/panel" 
         element={
-          <ProtectedRoute allowedRoles={['admin', 'empleado', 'ciudadano']}>
+          <ProtectedRoute allowedRoles={['administrador', 'empleado', 'ciudadano']}>
             <DashboardRoutes />
           </ProtectedRoute>
         }

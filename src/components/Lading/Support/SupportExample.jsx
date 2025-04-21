@@ -3,6 +3,7 @@ import { Form, Input, Button, message } from 'antd';
 import styled from 'styled-components';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
+import axios from 'axios';
 
 const FormContainer = styled(motion.div)`
   max-width: 800px;
@@ -111,6 +112,8 @@ function SupportExample() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const controls = useAnimation();
+  const api_url = import.meta.env.VITE_API_URL;
+
   const [ref, inView] = useInView({
     triggerOnce: true,
     threshold: 0.05, // Lowered from 0.2
@@ -128,16 +131,23 @@ function SupportExample() {
     
     // Simulate API call
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log('Form submitted:', values);
-      setSuccess(true);
-      form.resetFields();
-      
-      // Reset success message after 5 seconds
-      setTimeout(() => {
-        setSuccess(false);
-      }, 5000);
-      
+      const response = await axios.post(`${api_url}/api/contact`, {
+        nombre: values.nombre,
+        correo: values.email,
+        asunto: values.asunto,
+        mensaje: values.mensaje
+      });
+
+      if (response.data.success == true){
+        setSuccess(true);
+        form.resetFields();
+        // Reset success message after 5 seconds
+        setTimeout(() => {
+          setSuccess(false);
+        }, 5000);
+      } else {
+        message.error('Hubo un error al enviar el mensaje. Por favor, inténtelo de nuevo.');
+      }     
     } catch (error) {
       message.error('Hubo un error al enviar el mensaje. Por favor, inténtelo de nuevo.');
     } finally {

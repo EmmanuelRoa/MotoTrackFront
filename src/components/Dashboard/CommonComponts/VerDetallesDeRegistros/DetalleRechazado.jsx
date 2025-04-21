@@ -290,6 +290,7 @@ const DetalleRechazado = ({ data = {}, isCityzen, onEditRequest }) => {
     ]
   };
 
+
   // Handle navigation to registration page
   const handleNewRequest = () => {
     if (onEditRequest) {

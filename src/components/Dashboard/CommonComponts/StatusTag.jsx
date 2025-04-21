@@ -47,7 +47,7 @@ const STATUS_CONFIG = {
     colorDark: '#1AAA4C'
   },
   USUARIO_INACTIVO: {
-    color: '#E53935', // Rojo más brillante para ambos modos
+    color: '#FA8C16', // Rojo más brillante para ambos modos
     colorDark: '#E53935'
   },
   USUARIO_DESHABILITADO: {
@@ -153,7 +153,8 @@ export const MOTO_STATUS = {
 
 export const USUARIO_STATUS = {
   ACTIVO: 'USUARIO_ACTIVO',
-  DESHABILITADO: 'USUARIO_DESHABILITADO'
+  DESHABILITADO: 'USUARIO_DESHABILITADO',
+  INACTIVO: 'USUARIO_INACTIVO'
 };
 
 export default StatusTag;

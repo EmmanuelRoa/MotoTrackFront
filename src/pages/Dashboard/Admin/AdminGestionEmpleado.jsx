@@ -102,7 +102,8 @@ function AdminGestionEmpleado() {
   
   const statuses = [
     { id: 'activo', name: language === 'es' ? 'Activo' : 'Active' },
-    { id: 'deshabilitado', name: language === 'es' ? 'Deshabilitado' : 'Disabled' }
+    { id: 'deshabilitado', name: language === 'es' ? 'Deshabilitado' : 'Disabled' },
+    { id: 'inactivo', name: language === 'es' ? 'Inactivo' : 'Inactive'}
   ];
   
   const toggleFilters = () => {

@@ -215,6 +215,7 @@ function GestionTable({ empleadosData = [], onView, onEdit, onDelete, onActivate
       actions: 'Acciones',
       active: 'Activo',
       disable: 'Deshabilitado',
+      inactive: 'Inactivo',
       admin: 'Administrador',
       empleado: 'Empleado',
       agent: 'Agente',
@@ -247,6 +248,7 @@ function GestionTable({ empleadosData = [], onView, onEdit, onDelete, onActivate
       actions: 'Actions',
       active: 'Active',
       disable: 'Disable',
+      inactive: 'Inactive',
       admin: 'Administrator',
       empleado: 'Employee',
       agent: 'Agent',
@@ -452,12 +454,15 @@ function GestionTable({ empleadosData = [], onView, onEdit, onDelete, onActivate
       render: (estado) => {
         if (estado == 'activo') {
           return <StatusTag status={USUARIO_STATUS.ACTIVO} />;
+        } else if (estado == 'deshabilitado') {
+          return <StatusTag status={USUARIO_STATUS.DESHABILITADO} />;
         }
-        return <StatusTag status={USUARIO_STATUS.DESHABILITADO} />;
+        return <StatusTag status={USUARIO_STATUS.INACTIVO} />
       },
       filters: [
         { text: t.active, value: 'activo' },
         { text: t.disable, value: 'deshabilitado' },
+        { text: t.inactive, value: 'inactivo' }
       ],
       onFilter: (value, record) => record.estado === value,
       width: '10%',

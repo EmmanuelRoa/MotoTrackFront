@@ -111,7 +111,7 @@ function EmpleadoMetrics() {
       id: 3,
       title: t.issuedRegistrations.title,
       icon: <IdcardOutlined />,
-      value: metrics?.solicitudes?.totalProcesadas,
+      value: metrics?.solicitudes?.aprobadas,
       subtitle: t.issuedRegistrations.subtitle,
       bubbleColor: '#e6f7ff',  // Azul claro para el fondo
       iconColor: '#1890ff'     // Azul para el icono

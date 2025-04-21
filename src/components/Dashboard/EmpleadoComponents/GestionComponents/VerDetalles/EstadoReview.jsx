@@ -134,13 +134,13 @@ const StyledPopconfirm = styled(Popconfirm)`
   }
 `;
 
-// Agregar constante para motivos de rechazo
+// Actualiza las constantes de MOTIVOS_RECHAZO
 const MOTIVOS_RECHAZO = {
-  DOCUMENTOS_INVALIDOS: 'DOCUMENTOS_INVALIDOS',
-  INFORMACION_INCOMPLETA: 'INFORMACION_INCOMPLETA',
-  DUPLICADO: 'DUPLICADO',
-  VEHICULO_NO_CUMPLE: 'VEHICULO_NO_CUMPLE',
-  OTRO: 'OTRO'
+  DOCUMENTOS_INVALIDOS: 'Documentos Inválidos',
+  INFORMACION_INCOMPLETA: 'Información Incompleta',
+  DUPLICADO: 'Datos Duplicados',
+  VEHICULO_NO_CUMPLE: 'Datos del Vehiculo no cumplen',
+  OTRO: 'Otro'
 };
 
 const EstadoReview = ({ 
@@ -189,7 +189,8 @@ const EstadoReview = ({
       duplicate: "Duplicate Registration",
       vehicleNonCompliant: "Vehicle Does Not Meet Requirements",
       other: "Other Reason",
-      rejectionReasonRequired: "Please select a rejection reason"
+      rejectionReasonRequired: "Please select a rejection reason",
+      notesMinLength: 'Notes must be at least 5 characters long',
     },
     es: {
       status: "Estado",
@@ -217,7 +218,8 @@ const EstadoReview = ({
       duplicate: "Registro Duplicado",
       vehicleNonCompliant: "Vehículo No Cumple Requisitos",
       other: "Otro Motivo",
-      rejectionReasonRequired: "Por favor seleccione un motivo de rechazo"
+      rejectionReasonRequired: "Por favor seleccione un motivo de rechazo",
+      notesMinLength: 'Las notas deben tener al menos 5 caracteres',
     }
   };
 
@@ -242,10 +244,6 @@ const EstadoReview = ({
     if (pendingStatus !== REGISTRO_STATUS.RECHAZADO) {
       setMotivoRechazo(null);
       form.setFieldsValue({ rejectionReason: undefined });
-    } else {
-      // Set default rejection reason for rejection status
-      setMotivoRechazo(MOTIVOS_RECHAZO.DOCUMENTOS_INVALIDOS);
-      form.setFieldsValue({ rejectionReason: MOTIVOS_RECHAZO.DOCUMENTOS_INVALIDOS });
     }
   };
 
@@ -258,6 +256,7 @@ const EstadoReview = ({
 
   const handleMotivoRechazoChange = (value) => {
     setMotivoRechazo(value);
+    form.setFieldsValue({ rejectionReason: value });
   };
 
   const getConfirmTitle = () => {
@@ -282,18 +281,15 @@ const EstadoReview = ({
         status: selectedStatus // Make sure we log the correct status
       });
       
-      const boyData = {
-        "idSolicitud": data.solicitud.idSolicitud,
-        "estadoDecision": values.status,
-        "notaRevision": values.notes,
-        "motivoRechazo": values.rejectionReason,
-        "detalleRechazo": values.comments
-      }
 
       switch (selectedStatus) {
         case 'Aprobada':
           console.log("Procesando aprobación...");
-          console.log("Body Data: ", boyData);
+          let boyData = {
+            "idSolicitud": data.solicitud.idSolicitud,
+            "estadoDecision": values.status,
+            "notaRevision": values.notes,
+          }
           await axios.put(`${api_url}/api/solicitud/procesar`, boyData, {
             headers: {
               Authorization: `Bearer ${getAccessToken()}`,
@@ -315,8 +311,14 @@ const EstadoReview = ({
           break;
           
         case 'Rechazada':
+          const bodyData = {
+            "idSolicitud": data.solicitud.idSolicitud,
+            "estadoDecision": values.status,
+            "motivoRechazo": getMotivoRechazoTexto(values.rejectionReason),
+            "detalleRechazo": values.comments
+          }
           console.log("Procesando rechazo...");
-          await axios.put(`${api_url}/api/solicitud/procesar`, boyData, {
+          await axios.put(`${api_url}/api/solicitud/procesar`, bodyData, {
             headers: {
               Authorization: `Bearer ${getAccessToken()}`,
               'Content-Type': 'application/json'
@@ -326,7 +328,7 @@ const EstadoReview = ({
           // Show rejection notification
           notification.info(
             language === 'en' ? 'Registration Rejected' : 'Registro Rechazado',
-            language === 'en' ? `Rejection reason: ${motivoTexto}` : `Motivo de rechazo: ${motivoTexto}`
+            language === 'en' ? `Rejection reason: ${motivoRechazo}` : `Motivo de rechazo: ${motivoRechazo}`
           );
           
           // Small pause for notification to be visible
@@ -365,7 +367,7 @@ const EstadoReview = ({
       case MOTIVOS_RECHAZO.OTRO:
         return language === 'en' ? "Other Reason" : "Otro Motivo";
       default:
-        return language === 'en' ? "Rejection" : "Rechazo";
+        return language === 'en' ? "" : "";
     }
   };
 
@@ -455,13 +457,14 @@ const EstadoReview = ({
             name="rejectionReason"
             label={t.rejectionReason}
             rules={[{ required: true, message: t.rejectionReasonRequired }]}
-            initialValue={motivoRechazo || MOTIVOS_RECHAZO.DOCUMENTOS_INVALIDOS}
+            initialValue={motivoRechazo}
           >
             <DropdownContainer>
               <StyledSelect
                 onChange={handleMotivoRechazoChange}
                 getPopupContainer={triggerNode => triggerNode.parentElement}
                 popupClassName="motivo-rechazo-dropdown"
+                value={motivoRechazo}
               >
                 <Select.Option value={MOTIVOS_RECHAZO.DOCUMENTOS_INVALIDOS}>{t.invalidDocuments}</Select.Option>
                 <Select.Option value={MOTIVOS_RECHAZO.INFORMACION_INCOMPLETA}>{t.incompleteInformation}</Select.Option>
@@ -475,21 +478,26 @@ const EstadoReview = ({
 
         {selectedStatus !== 'Pendiente' && (
           <>
-            <Form.Item
-              name="comments"
-              label={t.comments}
-              rules={[{ required: true, message: t.commentsRequired }]}
-            >
-              <TextArea
-                rows={4}
-                placeholder={t.commentsPlaceholder}
-              />
-            </Form.Item>
+            {selectedStatus === 'Rechazada' && (
+              <Form.Item
+                name="comments"
+                label={t.comments}
+                rules={[{ required: true, message: t.commentsRequired }]}
+              >
+                <TextArea
+                  rows={4}
+                  placeholder={t.commentsPlaceholder}
+                />
+              </Form.Item>
+            )}
 
             <Form.Item
               name="notes"
               label={t.notes}
-              rules={[{ required: true, message: t.notesRequired }]}
+              rules={[
+                { required: true, message: t.notesRequired },
+                { min: 5, message: t.notesMinLength }
+              ]}
             >
               <TextArea
                 rows={4}

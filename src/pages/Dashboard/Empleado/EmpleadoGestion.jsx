@@ -61,7 +61,6 @@ function EmpleadoGestion() {
 
   const notification = useNotification();
   const tableColumnsRef = useRef([]);
-  
 
   const statuses = [
     { id: 'Aprobada', name: 'Aprobada' },
@@ -82,9 +81,9 @@ function EmpleadoGestion() {
         setFilteredData(response.data);
         setOriginalData(response.data); // Store original data for filtering
       } else {
-        notification.error(
-          language === 'en' ? 'Error' : 'Error',
-          language === 'en' ? 'Error loading requests' : 'Error al cargar las solicitudes'
+        notification.warning(
+          language === 'en' ? 'warning' : 'Cuidado',
+          language === 'en' ? 'No request has been assigned to this employee' : 'No ha sido asignada ninguna solicitud a este empleado'
         );
       }
     } catch (error) {

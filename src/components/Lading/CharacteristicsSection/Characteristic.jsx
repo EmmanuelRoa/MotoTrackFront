@@ -1,38 +1,35 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import styled from 'styled-components';
 import { motion, useAnimation } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { useEffect } from 'react';
 import IntroductionSection from '../CommonComponents/IntroductionSection';
 import CharacteristicInfiniteCarousel from './CharacteristicInfiniteCarousel';
 
 const SectionContainer = styled(motion.div)`
   width: 100%;
   overflow-x: hidden;
+  padding-top: clamp(20px, 3vw, 40px);
+  opacity: 0;
   
   .carousel-container {
-    margin-top: clamp(-40px, -6vw, -80px);
-  }
-  
-  @media (max-width: 768px) {
-    .carousel-container {
-      margin-top: -20px;
-    }
+    margin-top: clamp(20px, 2vw, 30px); // Reducido de 30px, 4vw, 50px
   }
 `;
 
-// Optimized animation variants for faster appearance
+// Optimizar las variantes de animación
 const containerVariants = {
   hidden: { 
     opacity: 0,
+    y: 30
   },
   visible: {
     opacity: 1,
+    y: 0,
     transition: {
-      duration: 0.2, // Reduced from 0.4
+      duration: 0.5,
       ease: "easeOut",
       when: "beforeChildren",
-      staggerChildren: 0.05 // Reduced from 0.1
+      delayChildren: 0.2
     }
   }
 };
@@ -56,14 +53,20 @@ const Characteristic = () => {
   const controls = useAnimation();
   const [ref, inView] = useInView({
     triggerOnce: true,
-    threshold: 0.05, // Lowered threshold to trigger animation earlier
-    rootMargin: "-20px 0px" // Changed from -50px to make it trigger sooner
+    threshold: 0.1,
+    rootMargin: "-50px 0px"
   });
 
   useEffect(() => {
+    // Retrasar la animación para dar tiempo a que termine el hero
+    let timeout;
     if (inView) {
-      controls.start("visible");
+      timeout = setTimeout(() => {
+        controls.start("visible");
+      }, 800); // Ajusta este valor según la duración de la animación del hero
     }
+    
+    return () => clearTimeout(timeout);
   }, [controls, inView]);
 
   return (

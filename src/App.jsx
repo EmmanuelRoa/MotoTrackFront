@@ -59,7 +59,7 @@ const PublicRoutes = () => {
   return (
     <Routes>
       {/* Public routes - always have white background */}
-      <Route path="/" element={<Login />} />
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       

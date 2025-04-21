@@ -26,18 +26,18 @@ const UserRow = styled.div`
   }
 `;
 
-const UserImage = styled(motion.img)`
+const ImageContainer = styled.div`
+  position: relative;
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  object-fit: cover;
+  overflow: hidden;
   cursor: pointer;
-  border: 2px solid transparent;
-  transition: all 0.3s ease;
 
-  ${props => props.isActive && `
+  /* Aplicar solo cuando está activo */
+  ${props => props.$isActive && `
     box-shadow: 0 0 20px 5px #81E9FF;
-    border-color: #BAB6FF;
+    border: 2px solid #BAB6FF;
   `}
   
   @media (max-width: 992px) {
@@ -54,6 +54,13 @@ const UserImage = styled(motion.img)`
     width: 32px;
     height: 32px;
   }
+`;
+
+const UserImage = styled(motion.img)`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 `;
 
 function TestimonialsUsers({ setCurrentUser, currentUser }) {
@@ -117,17 +124,16 @@ function TestimonialsUsers({ setCurrentUser, currentUser }) {
 
   // Enhanced animation variants - optimized for faster appearance
   const imageAnimation = {
-    initial: { opacity: 0, scale: 0.9 }, // Changed from 0.8 for subtler effect
+    initial: { opacity: 0, scale: 0.9 },
     animate: { opacity: 1, scale: 1 },
     hover: {
-      scale: 1.05, // Reduced from 1.1 for subtler effect
-      boxShadow: '0 0 15px 2px rgba(129, 233, 255, 0.5)',
-      transition: { duration: 0.2 } // Already fast
+      scale: 1.05, // Mantener solo la escala en hover
+      transition: { duration: 0.2 }
     },
     tap: {
       scale: 0.95
     },
-    exit: { opacity: 0, scale: 0.9 } // Changed from 0.8 for subtler effect
+    exit: { opacity: 0, scale: 0.9 }
   };
 
   // Helper function to render a row of users with staggered animations
@@ -162,25 +168,26 @@ function TestimonialsUsers({ setCurrentUser, currentUser }) {
 
         return (
           <Tooltip key={index} title={user.name} placement={placementDirection}>
-            <UserImage
-              isActive={currentUser === user.name}
-              onClick={() => setCurrentUser(user.name)}
-              src={imageSrc}
-              alt={user.name}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              whileHover="hover"
-              whileTap="tap"
-              variants={imageAnimation}
-              transition={{ 
-                duration: 0.3, // Reduced from 0.4
-                delay: index * 0.03, // Reduced from 0.05 for faster staggering
-                type: "spring",
-                stiffness: 300, // Increased from 260 for snappier movement
-                damping: 15 // Decreased from 20 for faster bounce
-              }}
-            />
+            <ImageContainer $isActive={currentUser === user.name}>
+              <UserImage
+                onClick={() => setCurrentUser(user.name)}
+                src={imageSrc}
+                alt={user.name}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                whileHover="hover"
+                whileTap="tap"
+                variants={imageAnimation}
+                transition={{ 
+                  duration: 0.3, // Reduced from 0.4
+                  delay: index * 0.03, // Reduced from 0.05 for faster staggering
+                  type: "spring",
+                  stiffness: 300, // Increased from 260 for snappier movement
+                  damping: 15 // Decreased from 20 for faster bounce
+                }}
+              />
+            </ImageContainer>
           </Tooltip>
         );
       })}

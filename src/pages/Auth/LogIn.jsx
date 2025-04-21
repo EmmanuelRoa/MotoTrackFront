@@ -83,74 +83,83 @@ const logoVariants = {
 const PageContainer = styled(motion.div)`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden; /* Prevent overflow */
+  min-height: 100vh;
+  max-height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
   
-  @media (max-width: 768px) {
+  @media (max-width: 840px) {
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
   }
 `;
 
 const SideImageContainer = styled(motion.div)`
-  height: 100%;
+  height: 100vh;
   position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   
-  @media (max-width: 768px) {
-    display: none; /* Hide the side image on mobile */
+  @media (max-width: 840px) {
+    display: none;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0px 40px 40px 0;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   }
 `;
 
 const FormContainer = styled(motion.div)`
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 40px;
-  height: 100%;
-  max-height: 100vh;
-  overflow-y: auto; /* Allow scrolling on mobile */
+  padding: clamp(15px, 3vw, 25px);
+  height: 100vh;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   
-  @media (max-width: 768px) {
-    padding: 20px;
-    justify-content: flex-start;
-    padding-top: 40px;
+  /* Hide scrollbar but keep functionality */
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  
+  @media (max-width: 840px) {
+    padding: clamp(10px, 2vw, 20px);
+    height: calc(100vh - env(safe-area-inset-bottom));
   }
 `;
 
 const LogoContainer = styled(motion.div)`
   text-align: center;
-  margin-bottom: 40px;
-  
-  @media (max-width: 768px) {
-    margin-bottom: 30px;
-  }
+  margin-bottom: clamp(20px, 4vw, 40px);
+  width: 100%;
 `;
 
 const Logo = styled(motion.img)`
-  height: 160px;
-  margin-bottom: 40px;
+  height: clamp(80px, 15vw, 160px);
+  margin-bottom: clamp(15px, 3vw, 30px);
   
-  @media (max-width: 768px) {
-    height: 120px;
-    margin-bottom: 20px;
+  @media (max-width: 840px) {
+    height: clamp(60px, 12vw, 100px);
+    margin-bottom: clamp(10px, 2vw, 20px);
   }
 `;
 
 const StyledTitle = styled(motion(Title))`
-  font-size: 3rem !important;
+  font-size: clamp(1.8rem, 3.5vw, 3rem) !important;
   text-align: center;
   line-height: 1.2 !important;
   font-weight: 600;
-  margin-bottom: 20px !important;
-  
-  @media (max-width: 768px) {
-    font-size: 2.2rem !important;
-    margin-bottom: 10px !important;
-  }
+  margin-bottom: clamp(10px, 2vw, 20px) !important;
 `;
 
 const BrandSpan = styled.span`
@@ -161,15 +170,12 @@ const BrandSpan = styled.span`
 
 const LoginForm = styled(motion.form)`
   width: 100%;
-  max-width: 550px;
+  max-width: 450px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0;
-  
-  @media (max-width: 768px) {
-    max-width: 100%;
-  }
+  gap: clamp(15px, 2vw, 25px);
+  padding-bottom: env(safe-area-inset-bottom);
 `;
 
 const StyledParagraph = styled(Paragraph)`
@@ -221,8 +227,8 @@ const ButtonContainer = styled.div`
 
 const FullWidthButton = styled(Button)`
   width: 100% !important; /* Asegura que ocupe el ancho completo */
-  padding: 15px 40px !important;
-  font-size: 18px !important;
+  padding: clamp(10px, 2vw, 15px) clamp(20px, 4vw, 40px) !important;
+  font-size: clamp(14px, 1.8vw, 18px) !important;
   height: auto !important;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(99, 91, 255, 0.2);
@@ -233,65 +239,33 @@ const FullWidthButton = styled(Button)`
     box-shadow: 0 6px 8px rgba(99, 91, 255, 0.3);
   }
   
-  @media (max-width: 768px) {
-    padding: 12px 20px !important;
-    font-size: 16px !important;
+  @media (max-width: 840px) {
+    padding: clamp(8px, 1.5vw, 12px) clamp(15px, 3vw, 20px) !important;
   }
 `;
 
 const LargerInput = styled(Input)`
-  width: 100% !important;
-  margin-bottom: 15px !important; /* Reduced for more consistent spacing */
-  
   .ant-input, .ant-input-password {
-    font-size: 16px;
-    height: 55px;
-    padding: 12px;
-    display: flex;
-    align-items: center;
-    width: 100%;
-    
-    @media (max-width: 768px) {
-      height: 50px;
-      font-size: 14px;
-    }
-  }
-  
-  .ant-input-password .ant-input {
-    height: auto;
-    padding: 0;
+    height: clamp(40px, 5vw, 50px);
+    font-size: clamp(14px, 1.4vw, 16px);
   }
   
   .ant-input-affix-wrapper {
-    height: 55px;
-    padding: 0 12px;
-    display: flex;
-    align-items: center;
-    width: 100%;
-    
-    @media (max-width: 768px) {
-      height: 50px;
-    }
+    height: clamp(40px, 5vw, 50px);
   }
   
   label {
-    font-size: 18px;
-    margin-bottom: 10px;
-    width: 100%;
-    
-    @media (max-width: 768px) {
-      font-size: 16px;
-      margin-bottom: 8px;
-    }
+    font-size: clamp(14px, 1.4vw, 16px);
+    margin-bottom: clamp(4px, 0.8vw, 8px);
   }
 `;
 
 const InputGroup = styled.div`
   width: 100%;
-  margin-bottom: 30px; /* Increased from 20px to create more space between input groups */
+  margin-bottom: clamp(12px, 2vw, 20px);
   
-  @media (max-width: 768px) {
-    margin-bottom: 20px;
+  &:last-child {
+    margin-bottom: 0;
   }
 `;
 

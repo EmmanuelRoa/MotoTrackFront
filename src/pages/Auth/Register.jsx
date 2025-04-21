@@ -96,75 +96,67 @@ const logoVariants = {
 const PageContainer = styled(motion.div)`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  align-items: center;
-  justify-content: center;
   height: 100vh;
-  width: 100vw;
+  width: 100%;
   overflow: hidden;
+  position: relative;
   
-  @media (max-width: 768px) {
+  @media (max-width: 840px) {
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
   }
 `;
 
 const SideImageContainer = styled(motion.div)`
-  height: 100%;
+  height: 100vh;
   position: relative;
-  max-height: 100vh;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   
-  @media (max-width: 768px) {
+  @media (max-width: 840px) {
     display: none;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0px 40px 40px 0;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   }
 `;
 
 const FormContainer = styled(motion.div)`
   display: flex;
   flex-direction: column;
+  padding: clamp(10px, 2vw, 20px);
+  height: 100vh;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
   justify-content: center;
-  align-items: center;
-  padding: 40px;
-  height: 100%;
-  max-height: 100vh;
-  overflow-y: auto;
-  
-  @media (max-width: 768px) {
-    padding: 20px;
-    justify-content: flex-start;
-    padding-top: 40px;
+
+  @media (max-width: 840px) {
+    padding: clamp(8px, 1.5vw, 15px);
   }
 `;
 
 const LogoContainer = styled(motion.div)`
   text-align: center;
-  margin-bottom: 30px;
-  
-  @media (max-width: 768px) {
-    margin-bottom: 20px;
-  }
+  margin-bottom: clamp(10px, 2vw, 20px);
+  width: 100%;
 `;
 
 const Logo = styled(motion.img)`
-  height: 160px;
-  margin-bottom: 20px;
-  
-  @media (max-width: 768px) {
-    height: 100px;
-    margin-bottom: 15px;
-  }
+  height: clamp(50px, 8vw, 80px);
+  margin-bottom: clamp(5px, 1vw, 10px);
 `;
 
 const StyledTitle = styled(motion(Title))`
-  font-size: 2.8rem !important;
-  text-align: center;
+  font-size: clamp(1.5rem, 2.5vw, 2rem) !important;
   line-height: 1.2 !important;
-  font-weight: 600;
-  
-  @media (max-width: 768px) {
-    font-size: 2rem !important;
-    margin-bottom: 10px !important;
-  }
+  margin-bottom: clamp(8px, 1.5vw, 15px) !important;
 `;
 
 const BrandSpan = styled.span`
@@ -175,32 +167,27 @@ const BrandSpan = styled.span`
 
 const RegisterForm = styled(motion.form)`
   width: 100%;
-  max-width: 650px;
+  max-width: 450px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0;
-  overflow: visible;
-  
-  @media (max-width: 768px) {
-    max-width: 100%;
-  }
+  gap: clamp(8px, 1.5vw, 15px);
 `;
 
 const InputRow = styled(motion.div)`
   display: flex;
-  gap: 20px;
+  gap: clamp(10px, 2vw, 20px);
   width: 100%;
   
-  @media (max-width: 768px) {
+  @media (max-width: 840px) {
     flex-direction: column;
-    gap: 0;
+    gap: clamp(8px, 1.5vw, 15px);
   }
 `;
 
 const StyledParagraph = styled(Paragraph)`
-  margin-top: 20px !important;
-  font-size: 18px !important;
+  margin-top: clamp(8px, 1.5vw, 15px) !important;
+  font-size: clamp(13px, 1.2vw, 15px) !important;
   text-align: center;
   width: 100%;
   
@@ -226,16 +213,13 @@ const StyledLink = styled(Link)`
 `;
 
 const ErrorMessage = styled(Text)`
+  font-size: clamp(10px, 1.1vw, 12px) !important;
+  margin-top: clamp(2px, 0.4vw, 3px);
   color: #ff4d4f !important;
-  font-size: 14px !important;
-  display: block;
-  margin-top: 2px; /* Reducido de 5px */
-  margin-bottom: 8px; /* Añadido para separación consistente */
   width: 100%;
   
-  @media (max-width: 768px) {
-    font-size: 12px !important;
-    margin-bottom: 6px;
+  @media (max-width: 840px) {
+    font-size: clamp(10px, 1.2vw, 12px) !important;
   }
 `;
 
@@ -248,8 +232,8 @@ const ButtonContainer = styled.div`
 
 const FullWidthButton = styled(Button)`
   width: 100% !important;
-  padding: 15px 40px !important;
-  font-size: 18px !important;
+  padding: clamp(8px, 1.5vw, 12px) !important;
+  font-size: clamp(13px, 1.2vw, 15px) !important;
   height: auto !important;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(99, 91, 255, 0.2);
@@ -260,66 +244,33 @@ const FullWidthButton = styled(Button)`
     box-shadow: 0 6px 8px rgba(99, 91, 255, 0.3);
   }
   
-  @media (max-width: 768px) {
-    padding: 12px 20px !important;
-    font-size: 16px !important;
+  @media (max-width: 840px) {
+    padding: clamp(8px, 1.5vw, 12px) clamp(15px, 3vw, 20px) !important;
   }
 `;
 
 const LargerInput = styled(Input)`
-  width: 100% !important;
-  margin-bottom: 6px !important; /* Reducido para que los mensajes de error no creen tanto espacio */
-  
   .ant-input, .ant-input-password {
-    font-size: 16px;
-    height: 45px; /* Cambia este valor al que prefieras */
-    padding: 10px 12px;
-    display: flex;
-    align-items: center;
-    width: 100%;
-    
-    @media (max-width: 768px) {
-      height: 45px;
-      font-size: 14px;
-    }
+    height: clamp(35px, 4vw, 45px);
+    font-size: clamp(13px, 1.2vw, 15px);
   }
   
   .ant-input-affix-wrapper {
-    height: 45px; /* Cambia este valor para ajustar la altura del contenedor del input de contraseña */
-    padding: 0 12px;
-    display: flex;
-    align-items: center;
-    width: 100%;
-    
-    @media (max-width: 768px) {
-      height: 45px;
-    }
-  }
-  
-  .ant-input-password .ant-input {
-    height: 100%; /* Esto asegura que el input interno tenga la misma altura */
-    padding: 0;
+    height: clamp(35px, 4vw, 45px);
   }
   
   label {
-    font-size: 16px;
-    margin-bottom: 6px; /* Consistente */
-    display: block; /* Asegura que ocupe su propio espacio */
-    width: 100%;
-    
-    @media (max-width: 768px) {
-      font-size: 15px;
-      margin-bottom: 4px;
-    }
+    font-size: clamp(13px, 1.2vw, 15px);
+    margin-bottom: clamp(2px, 0.5vw, 4px);
   }
 `;
 
 const InputGroup = styled.div`
   width: 100%;
-  margin-bottom: 24px; /* Más consistente */
+  margin-bottom: clamp(8px, 1.5vw, 12px);
   
   &:last-child {
-    margin-bottom: 16px; /* Menor margen para el último grupo */
+    margin-bottom: 0;
   }
   
   @media (max-width: 768px) {
@@ -329,10 +280,16 @@ const InputGroup = styled.div`
 
 const CheckboxContainer = styled.div`
   width: 100%;
-  margin-top: 0px;
-  margin-bottom: 10px; /* Reducido de 15px */
-  display: flex;
-  align-items: center;
+  margin: clamp(3px, 0.8vw, 6px) 0;
+  
+  .ant-checkbox + span {
+    font-size: clamp(11px, 1.2vw, 14px);
+    padding-left: clamp(6px, 1vw, 8px);
+  }
+
+  @media (max-width: 840px) {
+    margin: clamp(3px, 0.8vw, 8px) 0;
+  }
 `;
 
 const StyledCheckbox = styled(Checkbox)`

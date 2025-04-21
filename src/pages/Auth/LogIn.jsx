@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { Typography } from 'antd';
-import { motion } from 'framer-motion'; // Import framer-motion
+import { Typography, Spin } from 'antd'; // Importa Spin
+import { motion } from 'framer-motion';
 import SideImage from '../../components/Auth/SideImage';
 import Input from '../../components/Auth/Input';
 import Button from '../../components/Auth/Button';
@@ -61,8 +61,6 @@ const sideImageVariants = {
     }
   },
 };
-
-
 
 const logoVariants = {
   initial: { scale: 0.7, opacity: 0, rotate: -5 },
@@ -336,6 +334,7 @@ function LogIn() {
     password: ''
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false); // Estado para el spinner
   const { login } = useAuth();
 
   const handleChange = (e) => {
@@ -378,17 +377,28 @@ function LogIn() {
     return valid;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (validateForm()) {
-      const user = login(formData.email, formData.password);
-      if (!user) {
+      setIsSubmitting(true); // Mostrar spinner
+      try {
+        const user = await login(formData.email, formData.password);
+        if (user.success === false) {
+          setErrors(prevErrors => ({
+            ...prevErrors,
+            email: 'Email o Contraseña inválidos',
+            password: 'Email o Contraseña inválidos'
+          }));
+        }
+      } catch (error) {
+        console.error('Error during login:', error);
         setErrors(prevErrors => ({
           ...prevErrors,
-          email: 'Invalid email or password',
-          password: 'Invalid email or password'
+          email: 'Error al iniciar sesión, intenta de nuevo.'
         }));
+      } finally {
+        setIsSubmitting(false); // Ocultar spinner
       }
     }
   };
@@ -398,115 +408,117 @@ function LogIn() {
   };
 
   return (
-    <PageContainer
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-    >
-      <SideImageContainer
-        variants={sideImageVariants}
+    <Spin spinning={isSubmitting} tip="Iniciando sesión..."> {/* Spinner envuelve todo el contenido */}
+      <PageContainer
+        variants={pageVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
       >
-        <SideImage type="login" />
-      </SideImageContainer>
-      
-      <FormContainer
-        variants={itemVariants}
-      >
-        <MobileHeader>
-          <BackButton onClick={navigateToHome}>Inicio</BackButton>
-        </MobileHeader>
+        <SideImageContainer
+          variants={sideImageVariants}
+        >
+          <SideImage type="login" />
+        </SideImageContainer>
         
-        <LogoContainer>
-          <Logo 
-            src={MotoTrackLogo} 
-            alt="MotoTrack Logo" 
-            variants={logoVariants}
-            initial="initial"
-            animate="animate"
-          />
-          <StyledTitle 
-            level={1}
+        <FormContainer
+          variants={itemVariants}
+        >
+          <MobileHeader>
+            <BackButton onClick={navigateToHome}>Inicio</BackButton>
+          </MobileHeader>
+          
+          <LogoContainer>
+            <Logo 
+              src={MotoTrackLogo} 
+              alt="MotoTrack Logo" 
+              variants={logoVariants}
+              initial="initial"
+              animate="animate"
+            />
+            <StyledTitle 
+              level={1}
+              variants={itemVariants}
+            >
+              ¡Hola! Bienvenido a <motion.span
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ 
+                  opacity: 1, 
+                  y: 0,
+                  transition: { delay: 0.2, duration: 0.2 } 
+                }}
+              ><BrandSpan>MotoTrack</BrandSpan></motion.span>
+            </StyledTitle>
+          </LogoContainer>
+          
+          <LoginForm 
+            onSubmit={handleSubmit}
             variants={itemVariants}
           >
-            ¡Hola! Bienvenido a <motion.span
-              initial={{ opacity: 0, y: 5 }}
+            <motion.div variants={itemVariants} style={{ width: '100%' }}>
+              <InputGroup>
+                <LargerInput 
+                  title="Email"
+                  placeholder="IliaOwnsVolk@gmail.com"
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                />
+                {errors.email && <ErrorMessage type="danger">{errors.email}</ErrorMessage>}
+              </InputGroup>
+            </motion.div>
+            
+            <motion.div variants={itemVariants} style={{ width: '100%' }}>
+              <InputGroup>
+                <LargerInput 
+                  title="Contraseña"
+                  placeholder="********"
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                />
+                {errors.password && <ErrorMessage type="danger">{errors.password}</ErrorMessage>}
+              </InputGroup>
+            </motion.div>
+            
+            <motion.div 
+              style={{ width: '100%' }}
+              whileHover="hover"
+              whileTap="tap"
+            >
+              <ButtonContainer>
+                <FullWidthButton 
+                  size="large" 
+                  htmlType="submit" 
+                  disabled={isSubmitting} // Deshabilitar botón mientras se envía
+                >
+                  Iniciar sesión
+                </FullWidthButton>
+              </ButtonContainer>
+            </motion.div>
+            
+            <motion.div 
+              variants={itemVariants}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ 
                 opacity: 1, 
                 y: 0,
-                transition: { delay: 0.2, duration: 0.2 } 
+                transition: { 
+                  delay: 0.3, 
+                  duration: 0.2 
+                }
               }}
-            ><BrandSpan>MotoTrack</BrandSpan></motion.span>
-          </StyledTitle>
-        </LogoContainer>
-        
-        <LoginForm 
-          onSubmit={handleSubmit}
-          variants={itemVariants}
-        >
-          <motion.div variants={itemVariants} style={{ width: '100%' }}>
-            <InputGroup>
-              <LargerInput 
-                title="Email"
-                placeholder="IliaOwnsVolk@gmail.com"
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-              />
-              {errors.email && <ErrorMessage type="danger">{errors.email}</ErrorMessage>}
-            </InputGroup>
-          </motion.div>
-          
-          <motion.div variants={itemVariants} style={{ width: '100%' }}>
-            <InputGroup>
-              <LargerInput 
-                title="Contraseña"
-                placeholder="********"
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-              />
-              {errors.password && <ErrorMessage type="danger">{errors.password}</ErrorMessage>}
-            </InputGroup>
-          </motion.div>
-          
-          <motion.div 
-            style={{ width: '100%' }}
-         
-            whileHover="hover"
-            whileTap="tap"
-          >
-            <ButtonContainer>
-              <FullWidthButton 
-                size="large" 
-                htmlType="submit"
-              >
-                Iniciar sesión
-              </FullWidthButton>
-            </ButtonContainer>
-          </motion.div>
-          
-          <motion.div 
-            variants={itemVariants}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ 
-              opacity: 1, 
-              y: 0,
-              transition: { 
-                delay: 0.3, 
-                duration: 0.2 
-              }
-            }}
-          >
-            <StyledParagraph>
-              ¿Nuevo por aquí? <StyledLink to="/register">Crea una cuenta</StyledLink>
-            </StyledParagraph>
-          </motion.div>
-        </LoginForm>
-      </FormContainer>
-    </PageContainer>
+            >
+              <StyledParagraph>
+                ¿Nuevo por aquí? <StyledLink to="/register">Crea una cuenta</StyledLink>
+              </StyledParagraph>
+            </motion.div>
+          </LoginForm>
+        </FormContainer>
+      </PageContainer>
+    </Spin>
   );
 }
 

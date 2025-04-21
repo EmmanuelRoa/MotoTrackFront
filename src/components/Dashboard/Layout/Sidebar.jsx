@@ -552,7 +552,6 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
   useEffect(() => {
     const pathSegments = location.pathname.split('/');
     const currentPath = pathSegments[pathSegments.length - 1];
-    
     if (currentPath === 'admin' || currentPath === 'empleado' || currentPath === 'ciudadano' || currentPath === '') {
       setSelectedKeys(['dashboard']);
     } else {
@@ -569,9 +568,8 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
         label: getTranslation('sidebar.dashboard', language)
       }
     ];
-    
     // Elementos para administrador
-    if (currentUser?.role === 'admin') {
+    if (currentUser?.role === 'administrador') {
       return [
         ...baseItems,
         {
@@ -628,9 +626,9 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
     setPageLoading(true);
     
     let path = '';
-    if (currentUser.role === 'admin') {
+    if (currentUser?.role === 'administrador') {
       path = `/panel/admin${key === 'dashboard' ? '' : `/${key}`}`;
-    } else if (currentUser.role === 'empleado') {
+    } else if (currentUser?.role === 'empleado') {
       path = `/panel/empleado${key === 'dashboard' ? '' : `/${key}`}`;
     } else {
       // Para ciudadano
@@ -647,7 +645,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
     // Simular tiempo de carga (puedes eliminar esto en producción)
     setTimeout(() => {
       setPageLoading(false);
-    }, 800); // Ajusta este tiempo según tus necesidades
+    }, 600); // Ajusta este tiempo según tus necesidades
     
     if (isMobile) {
       setMobileDrawerVisible(false);

@@ -1,5 +1,5 @@
-import React from 'react';
-import { Row, Col } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Row, Col, notification } from 'antd';
 import { 
   TeamOutlined, 
   CrownOutlined, 
@@ -9,6 +9,8 @@ import {
 import MetricCard from '../../CommonComponts/MetricCard';
 import styled from 'styled-components';
 import { useLanguage } from '../../../../context/LanguageContext';
+import { useAuth } from '../../../../context/AuthContext';
+import axios from 'axios';
 
 const MetricsContainer = styled.div`
   margin-bottom: 24px;
@@ -16,7 +18,9 @@ const MetricsContainer = styled.div`
 
 function EmpleadosMetricsCards() {
   const { language } = useLanguage();
-  
+  const api_url = import.meta.env.VITE_API_URL;
+  const { getAccessToken, currentUser } = useAuth();
+  const [employees, setEmployees] = useState(null);
   const translations = {
     es: {
       totalEmpleados: {
@@ -58,12 +62,32 @@ function EmpleadosMetricsCards() {
 
   const t = translations[language] || translations.es;
 
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const response = await axios.get(`${api_url}/api/statistics/dashboard?=vista=empleados`, {
+          headers: {
+            Authorization: `Bearer ${getAccessToken()}`
+          }
+        });
+        setEmployees(response.data.data);
+      } catch (error) {
+        console.error('Error fetching employees:', error);
+        notification.error({
+          message: 'Error',
+          description: 'No se pudieron cargar los empleados. Por favor, inténtelo de nuevo más tarde.'
+        });
+      }
+    };
+    fetchEmployees();
+  });
+
   const metricsData = [
     {
       id: 1,
       title: t.totalEmpleados.title,
       icon: <TeamOutlined />,
-      value: '24',
+      value: employees?.usuarios?.empleados?.total,
       subtitle: t.totalEmpleados.subtitle,
       bubbleColor: '#e6f7ff',  // Light blue background
       iconColor: '#1890ff'     // Blue icon
@@ -72,7 +96,7 @@ function EmpleadosMetricsCards() {
       id: 2,
       title: t.administradores.title,
       icon: <CrownOutlined />,
-      value: '6',
+      value: employees?.usuarios?.administradores,
       subtitle: t.administradores.subtitle,
       bubbleColor: '#fff7e6',  // Light orange background
       iconColor: '#fa8c16'     // Orange icon
@@ -81,7 +105,7 @@ function EmpleadosMetricsCards() {
       id: 3,
       title: t.nuevosEmpleados.title,
       icon: <UserAddOutlined />,
-      value: '3',
+      value: employees?.usuarios?.empleados?.nuevosEsteMes,
       subtitle: t.nuevosEmpleados.subtitle,
       bubbleColor: '#f6ffed',  // Light green background
       iconColor: '#52c41a'     // Green icon
@@ -90,7 +114,7 @@ function EmpleadosMetricsCards() {
       id: 4,
       title: t.empleadosActivos.title,
       icon: <UserSwitchOutlined />,
-      value: '18',
+      value: employees?.usuarios?.empleados?.activos,
       subtitle: t.empleadosActivos.subtitle,
       bubbleColor: '#f9f0ff',  // Light purple background
       iconColor: '#722ed1'     // Purple icon

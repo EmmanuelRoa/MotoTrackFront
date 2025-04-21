@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Table, Space, Tooltip } from 'antd'; // Eliminar message de aquí
+import { Table, Space, Tooltip, Spin } from 'antd'; // Eliminar message de aquí
 import styled from 'styled-components';
-import { registrosData, REGISTRO_STATUS } from '../../../../data/registrosData';
+import { REGISTRO_STATUS } from '../../../../data/registrosData';
 import StatusTag, { MOTO_STATUS } from '../../CommonComponts/StatusTag';
 import MainButton from '../../CommonComponts/MainButton';
 import SecondaryButton from '../../CommonComponts/SecondaryButton';
@@ -16,6 +16,7 @@ import { formatDate } from '../../../../utils/dateUtils';
 import { useNotification } from '../../CommonComponts/ToastNotifications';
 // Import icon
 import { DownloadOutlined } from '@ant-design/icons';
+import { set } from 'lodash';
 
 // Helper function to convert hex to rgba - moved outside component
 const hexToRgba = (hex, alpha = 1) => {
@@ -25,6 +26,14 @@ const hexToRgba = (hex, alpha = 1) => {
   const b = parseInt(hex.slice(5, 7), 16);
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
+
+const SpinnerContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  width: 100%;
+`;
 
 // Container styled like FilterSection
 const TableContainer = styled.div`
@@ -142,7 +151,7 @@ const FullWidthSecondaryButton = styled(SecondaryButton)`
   justify-content: center;
 `;
 
-const GestionTable = ({ registrosData = [], onView, onReview, onCarnet, onTableReady }) => {
+const GestionTable = ({ registrosData = [], onView, onReview, onCarnet, onTableReady, onRefresh }) => {
   const { primaryColor } = usePrimaryColor();
   const { language, translations } = useLanguage();
   const theme = useTheme();
@@ -151,13 +160,16 @@ const GestionTable = ({ registrosData = [], onView, onReview, onCarnet, onTableR
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
   // Usar el hook de notificaciones
   const notification = useNotification();
 
   useEffect(() => {
+    setLoading(true);
     if (registrosData && registrosData.length > 0) {
       setData(registrosData);
     }
+    setLoading(false);
   }, [registrosData]);
 
   // Create a lighter shade for gradient
@@ -185,20 +197,6 @@ const GestionTable = ({ registrosData = [], onView, onReview, onCarnet, onTableR
       month: 'short',
       year: 'numeric',
     });
-  };
-
-  // Map REGISTRO_STATUS to MOTO_STATUS for StatusTag
-  const mapStatusToMotoStatus = (status) => {
-    switch (status) {
-      case REGISTRO_STATUS.APROBADO:
-        return MOTO_STATUS.APROBADA;
-      case REGISTRO_STATUS.PENDIENTE:
-        return MOTO_STATUS.PENDIENTE;
-      case REGISTRO_STATUS.RECHAZADO:
-        return MOTO_STATUS.RECHAZADA;
-      default:
-        return MOTO_STATUS.PENDIENTE;
-    }
   };
 
   // Table column translations
@@ -270,16 +268,12 @@ const GestionTable = ({ registrosData = [], onView, onReview, onCarnet, onTableR
 
   // Prepare carnet data from registration record
   const prepareCarnetData = (record) => {
-    const aprobacionDetalles = record.aprobacionDetalles || {};
-    const datosPersonales = record.datosPersonales || {};
-    const datosMotocicleta = record.datosMotocicleta || {};
-    
     return {
-      placa: aprobacionDetalles.numeroPlacaAsignado || datosMotocicleta.placa || '',
-      propietario: datosPersonales.nombreCompleto || '',
-      modelo: `${datosMotocicleta.marca || ''} ${datosMotocicleta.modelo || ''} (${datosMotocicleta.año || ''})`,
-      chasis: datosMotocicleta.numeroChasis || '',
-      fechaEmision: formatDate(aprobacionDetalles.fechaAprobacion) || formatDate(new Date().toISOString())
+      placa: record.matricula.matriculaGenerada || '',
+      propietario: `${record.ciudadano.nombres} ${record.ciudadano.apellidos}`,
+      modelo: `${record.vehiculo.marca.nombre} ${record.vehiculo.modelo.nombre} (${record.vehiculo.año})`,
+      chasis: record.vehiculo.chasis,
+      fechaEmision: record.solicitud.fechaProcesada
     };
   };
 
@@ -310,62 +304,68 @@ const GestionTable = ({ registrosData = [], onView, onReview, onCarnet, onTableR
   const columns = useMemo(() => [
     {
       title: t.id,
-      dataIndex: 'id',
-      key: 'id',
-      sorter: (a, b) => a.id - b.id,
+      dataIndex: ['solicitud', 'idSolicitud'],
+      key: 'idSolicitud',
+      sorter: (a, b) => a.solicitud.idSolicitud - b.solicitud.idSolicitud,
       width: '5%',
     },
     {
       title: t.owner,
-      dataIndex: ['datosPersonales', 'nombreCompleto'],
+      render: (record) => `${record.ciudadano.nombres} ${record.ciudadano.apellidos}`,
       key: 'propietario',
-      sorter: (a, b) => a.datosPersonales.nombreCompleto.localeCompare(b.datosPersonales.nombreCompleto),
+      sorter: (a, b) => 
+        `${a.ciudadano.nombres} ${a.ciudadano.apellidos}`.localeCompare(
+          `${b.ciudadano.nombres} ${b.ciudadano.apellidos}`
+        ),
       width: '25%',
     },
     {
       title: t.brand,
-      dataIndex: ['datosMotocicleta', 'marca'],
+      dataIndex: ['vehiculo', 'marca', 'nombre'],
       key: 'marca',
-      sorter: (a, b) => a.datosMotocicleta.marca.localeCompare(b.datosMotocicleta.marca),
+      sorter: (a, b) => 
+        a.vehiculo.marca.nombre.localeCompare(b.vehiculo.marca.nombre),
       width: '12%',
     },
     {
       title: t.model,
-      dataIndex: ['datosMotocicleta', 'modelo'],
+      dataIndex: ['vehiculo', 'modelo', 'nombre'],
       key: 'modelo',
-      sorter: (a, b) => a.datosMotocicleta.modelo.localeCompare(b.datosMotocicleta.modelo),
+      sorter: (a, b) => 
+        a.vehiculo.modelo.nombre.localeCompare(b.vehiculo.modelo.nombre),
       width: '12%',
     },
     {
       title: t.date,
-      dataIndex: 'fechaSolicitud',
+      dataIndex: ['solicitud', 'fechaRegistro'],
       key: 'fecha',
       render: (text) => formatTableDate(text),
-      sorter: (a, b) => new Date(a.fechaSolicitud) - new Date(b.fechaSolicitud),
+      sorter: (a, b) => 
+        new Date(a.solicitud.fechaRegistro) - new Date(b.solicitud.fechaRegistro),
       width: '13%',
     },
     {
       title: t.status,
-      dataIndex: 'estado',
+      dataIndex: ['solicitud', 'estadoDecision'],
       key: 'estado',
       render: (status) => {
-        const motoStatus = mapStatusToMotoStatus(status);
+        const motoStatus = mapEstadoToStatusTag(status);
         return <StatusTag status={motoStatus} />;
       },
       filters: [
-        { text: t.approved, value: REGISTRO_STATUS.APROBADO },
-        { text: t.pending, value: REGISTRO_STATUS.PENDIENTE },
-        { text: t.rejected, value: REGISTRO_STATUS.RECHAZADO },
+        { text: t.approved, value: 'Aprobada' },
+        { text: t.pending, value: 'Pendiente' },
+        { text: t.rejected, value: 'Rechazada' },
       ],
-      onFilter: (value, record) => record.estado === value,
+      onFilter: (value, record) => record.solicitud.estadoDecision === value,
       width: '13%',
     },
     {
       title: t.actions,
       key: 'acciones',
       render: (_, record) => {
-        switch (record.estado) {
-          case REGISTRO_STATUS.PENDIENTE:
+        switch (record.solicitud.estadoDecision) {
+          case 'Pendiente':
             return (
               <ButtonContainer>
                 <Tooltip title={t.viewDetails}>
@@ -380,7 +380,7 @@ const GestionTable = ({ registrosData = [], onView, onReview, onCarnet, onTableR
                 </Tooltip>
               </ButtonContainer>
             );
-          case REGISTRO_STATUS.APROBADO:
+          case 'Aprobada':
             // Use DescargarCarnet component for approved records with showPreview=false
             return (
               <ButtonContainer>
@@ -411,7 +411,7 @@ const GestionTable = ({ registrosData = [], onView, onReview, onCarnet, onTableR
                 </Tooltip>
               </ButtonContainer>
             );
-          case REGISTRO_STATUS.RECHAZADO:
+          case 'Rechazada':
             return (
               <ButtonContainer>
                 <Tooltip title={t.viewDetails}>
@@ -443,6 +443,19 @@ const GestionTable = ({ registrosData = [], onView, onReview, onCarnet, onTableR
     }
   }, [columns, onTableReady]); // We can include dependencies now since we have the ref check
 
+  const mapEstadoToStatusTag = (estado) => {
+    switch (estado) {
+      case 'Aprobada':
+        return 'MOTO_APROBADA';
+      case 'Rechazada':
+        return 'MOTO_RECHAZADA';
+      case 'Pendiente':
+        return 'MOTO_PENDIENTE';
+      default:
+        return 'MOTO_PENDIENTE';
+    }
+  };
+
   return (
     <>
       {/* Título fuera del contenedor */}
@@ -452,18 +465,28 @@ const GestionTable = ({ registrosData = [], onView, onReview, onCarnet, onTableR
       
       {/* Contenedor de la tabla sin el título */}
       <TableContainer>
-        <StyledTable
-          $primaryColor={primaryColor}
-          $primaryColorLight={primaryColorLight}
-          columns={columns}
-          dataSource={data} // Change this to use the data state instead of registrosData directly
-          rowKey="id"
-          pagination={{ 
-            pageSize: 10,
-            showSizeChanger: true,
-            showTotal: (total, range) => t.recordsRange(range, total)
-          }}
-        />
+        {loading ? (
+          <SpinnerContainer>
+            <Spin
+              size="large" 
+              tip={language === 'es' ? "Cargando registros..." : "Loading records..."}
+            />
+          </SpinnerContainer>
+        ) : (
+          <StyledTable
+            $primaryColor={primaryColor}
+            $primaryColorLight={primaryColorLight}
+            columns={columns}
+            dataSource={data} // Change this to use the data state instead of registrosData directly
+            rowKey="id"
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: true,
+              showTotal: (total, range) => t.recordsRange(range, total)
+            }}
+            loading={loading}
+          />
+        )}
         
         {selectedRecord && (
           <ModalRevisionRegistro
@@ -471,7 +494,7 @@ const GestionTable = ({ registrosData = [], onView, onReview, onCarnet, onTableR
             onClose={handleModalClose}
             data={selectedRecord}
             isReviewMode={isReviewMode}
-            refreshData={refreshData} // Now refreshData is defined
+            refreshData={onRefresh} // Now refreshData is defined
           />
         )}
       </TableContainer>

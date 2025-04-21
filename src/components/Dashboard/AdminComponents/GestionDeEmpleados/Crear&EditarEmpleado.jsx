@@ -137,7 +137,7 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
   const [cargos, setCargos] = useState([]);
   const [showNewPassword, setShowNewPassword] = useState(false); // Estado para mostrar/ocultar nueva contraseña
   const [showConfirmPassword, setShowConfirmPassword] = useState(false); // Estado para mostrar/ocultar confirmar contraseña
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const api_url = import.meta.env.VITE_API_URL;
   const { getAccessToken } = useAuth();
   // Add fallback for language context in case it's not available
@@ -451,6 +451,28 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
     onClose();
   };
 
+  const formatCedula = (cedula) => {
+    if (!cedula) return undefined;
+    // Remove any non-digit characters
+    const cleaned = cedula.replace(/\D/g, '');
+    // Check if we have the correct length
+    if (cleaned.length !== 11) return cedula;
+    // Format with dashes
+    return `${cleaned.substring(0, 3)}-${cleaned.substring(3, 10)}-${cleaned.substring(10)}`;
+  };
+
+  // Helper function to format phone number
+  const formatPhone = (phone) => {
+    if (!phone) return undefined;
+    // Remove any non-digit characters
+    const cleaned = phone.replace(/\D/g, '');
+    // Check if we have the correct length
+    if (cleaned.length !== 10) return phone;
+    // Format with dashes
+    return `${cleaned.substring(0, 3)}-${cleaned.substring(3, 6)}-${cleaned.substring(6)}`;
+  };
+
+
   // Actualizar la función handleSubmit para mostrar notificaciones
   const handleSubmit = async (values) => {
     // Eliminar guiones y validar que sean solo números
@@ -525,6 +547,7 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
       }
 
       try {
+        setIsSubmitting(true);
         const requestBody = {
           id: empleadoData?.id || null,
           ...changedFields, // Solo los campos que cambiaron
@@ -553,9 +576,13 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
           texts.updateError,
           texts.updateErrorDesc
         );
+        setIsSubmitting(false);
+      } finally {
+        setIsSubmitting(false);
       }
     } else {
       try {
+        setIsSubmitting(true);
         const response = await axios.post(`${api_url}/api/user`, {
           nombres: formattedData.nombres,
           apellidos: formattedData.apellidos,
@@ -598,6 +625,9 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
           texts.updateError,
           texts.updateErrorDesc
         );
+        setIsSubmitting(false);
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
@@ -655,7 +685,7 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
               </FormRow>
 
               <FormRow>
-                <Form.Item
+                <Form.Item 
                   label={texts.idNumber}
                   name="cedula"
                   rules={[
@@ -674,7 +704,13 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
                     : undefined
                   }
                 >
-                  <Inputs placeholder="000-0000000-0" />
+                  <Inputs 
+                    placeholder="000-0000000-0"
+                    onChange={(e) => {
+                      const formatted = formatCedula(e.target.value);
+                      form.setFieldsValue({ cedula: formatted });
+                    }}
+                  />
                 </Form.Item>
                 
                 <Form.Item
@@ -808,7 +844,13 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
                   : undefined
                 }
               >
-                <Inputs placeholder="(000) 000-0000" />
+                <Inputs 
+                  placeholder="(000) 000-0000" 
+                  onChange={(e) => {
+                    const formatted = formatPhone(e.target.value);
+                    form.setFieldsValue({ telefono: formatted });
+                  }}
+                />
               </Form.Item>
 
               <Form.Item
@@ -968,6 +1010,8 @@ const CrearEditarEmpleado = ({ visible, onClose, empleadoData, isEditing }) => {
                       }
                     });
                 }}
+                loading={isSubmitting}
+                disabled={isSubmitting}
               >
                 {isEditing ? texts.save : texts.create}
               </MainButton>
